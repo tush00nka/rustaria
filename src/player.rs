@@ -43,7 +43,7 @@ fn rotation_locked() -> LockedAxes {
 }
 
 fn box_collider() -> Collider {
-    Collider::cuboid(0.5, 0.5)
+    Collider::cuboid(0.4, 0.5)
 }
 
 fn spawn_player(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {

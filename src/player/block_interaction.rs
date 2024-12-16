@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::{mouse_position::MousePosition, world::BreakBlockAtPosition, BLOCK_SIZE_PX};
+use crate::{mouse_position::MousePosition, world::{chunk::block::BlockLayer, BreakBlock}, BLOCK_SIZE_PX};
 
 use super::Player;
 
@@ -9,11 +9,11 @@ pub struct BlockInteractionPlugin;
 
 impl Plugin for BlockInteractionPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<SelectedBlockPosition>();
+        app.init_resource::<SelectedBlock>();
         
         app
             .add_systems(Startup, spawn_selection_box)
-            .add_systems(Update, (update_selected_position, move_selection_box, break_blocks));
+            .add_systems(Update, (toggle_selection_mode, update_selected_position, move_selection_box, break_blocks));
     }
 }
 
@@ -33,47 +33,92 @@ fn spawn_selection_box(
     ));
 }
 
+#[derive(PartialEq)]
+enum BlockSelectionMode {
+    Free,
+    Raycasting,
+}
+
+impl Default for BlockSelectionMode {
+    fn default() -> Self {
+        Self::Raycasting
+    }
+}
+
 #[derive(Resource, Default)]
-struct SelectedBlockPosition(Vec2);
+struct SelectedBlock {
+    position: Vec2,
+    selection_mode: BlockSelectionMode,
+}
+
+fn toggle_selection_mode(
+    mut selected: ResMut<SelectedBlock>,
+    keyboard: Res<ButtonInput<KeyCode>>,
+) {
+    if keyboard.just_pressed(KeyCode::Tab) {
+        match selected.selection_mode {
+            BlockSelectionMode::Free => selected.selection_mode = BlockSelectionMode::Raycasting,
+            BlockSelectionMode::Raycasting => selected.selection_mode = BlockSelectionMode::Free,
+        }
+    }
+}
 
 fn update_selected_position(
     q_player: Query<&Transform, (With<Player>, Without<BlockSelectionBox>)>, 
     q_rapier_context: Query<&RapierContext>,
     mouse_position: Res<MousePosition>,
-    mut selected_position: ResMut<SelectedBlockPosition>,
+    mut selected: ResMut<SelectedBlock>,
 ) {
-    let Ok(rapier_context) = q_rapier_context.get_single() else { return };
-    let Ok(player_transform) = q_player.get_single() else { return };
-
-    let ray_dir = (mouse_position.0 - player_transform.translation.truncate()).normalize();
-
-    let Some((_, hit)) = rapier_context.cast_ray_and_get_normal(
-        player_transform.translation.truncate(),
-        ray_dir,
-        100.0,
-        true,
-        QueryFilter::exclude_dynamic())
-    else { return };
-
-    selected_position.0 = 
-        ((hit.point - hit.normal * BLOCK_SIZE_PX/2.)
-        / BLOCK_SIZE_PX).floor() * BLOCK_SIZE_PX;
+    if selected.selection_mode == BlockSelectionMode::Raycasting {
+        let Ok(rapier_context) = q_rapier_context.get_single() else { return };
+        let Ok(player_transform) = q_player.get_single() else { return };
+    
+        let ray_dir = (mouse_position.0 - player_transform.translation.truncate()).normalize();
+    
+        let Some((_, hit)) = rapier_context.cast_ray_and_get_normal(
+            player_transform.translation.truncate(),
+            ray_dir,
+            100.0,
+            true,
+            QueryFilter::exclude_dynamic())
+        else { return };
+    
+        selected.position = 
+            ((hit.point - hit.normal * BLOCK_SIZE_PX/2.)
+            / BLOCK_SIZE_PX).floor() * BLOCK_SIZE_PX;
+    }
+    else {
+        selected.position = (mouse_position.0 / BLOCK_SIZE_PX).floor() * BLOCK_SIZE_PX;
+    }
 }
 
 fn move_selection_box(
     mut q_selection: Query<&mut Transform, (With<BlockSelectionBox>, Without<Player>)>,
-    selected_position: Res<SelectedBlockPosition>,
+    selected: Res<SelectedBlock>,
 ) {
     let Ok(mut selection_transform) = q_selection.get_single_mut() else { return };
-    selection_transform.translation = (selected_position.0 + Vec2::splat(BLOCK_SIZE_PX/2.)).extend(2.0);
+    selection_transform.translation = (selected.position + Vec2::splat(BLOCK_SIZE_PX/2.)).extend(2.0);
 }
 
 fn break_blocks(
     mouse_button: Res<ButtonInput<MouseButton>>,
-    selected_position: Res<SelectedBlockPosition>,
-    mut ev_break_block: EventWriter<BreakBlockAtPosition>,
+    keyboard: Res<ButtonInput<KeyCode>>,
+    selected: Res<SelectedBlock>,
+    mut ev_break_block: EventWriter<BreakBlock>,
 ) {
     if mouse_button.just_pressed(MouseButton::Left) {
-        ev_break_block.send(BreakBlockAtPosition(selected_position.0));
+
+        let layer;
+        if keyboard.pressed(KeyCode::ShiftLeft) {
+            layer = BlockLayer::Background;
+        }
+        else {
+            layer = BlockLayer::Foreground;
+        }
+
+        ev_break_block.send(BreakBlock {
+            position: selected.position,
+            layer,
+        });
     }
 }

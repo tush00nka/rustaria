@@ -24,11 +24,13 @@ impl Plugin for ChunkPlugin {
 pub struct Chunk {
     pub position: (i32, i32),
     pub data: [[Block<'static>; CHUNK_SIZE]; CHUNK_SIZE],
+    pub background_data: [[Block<'static>; CHUNK_SIZE]; CHUNK_SIZE],
 }
 
 impl Chunk {
     pub fn new(_x: i32, _y: i32) -> Self {
         let mut data = [[Block::new(0); CHUNK_SIZE]; CHUNK_SIZE];
+        let mut background_data = [[Block::new(0); CHUNK_SIZE]; CHUNK_SIZE];
 
         let mut hasher = std::hash::DefaultHasher::new();
 
@@ -68,12 +70,21 @@ impl Chunk {
                         density_check = -0.1;
                     }
 
+                    background_data[x][y] = Block::new(1).with_layer(BlockLayer::Background); // dirt
+
                     if density > density_check {
                         data[x][y] = Block::new(1); // dirt
 
-                        if density > 0.6 && yf < height / 3. {
-                            data[x][y] = Block::new(3); // stone
+                        if yf < height / 3. {
+                            if density > 0.6  {
+                                data[x][y] = Block::new(3); // stone
+                            }
+
+                            if density > 0.5 {
+                                background_data[x][y] = Block::new(3).with_layer(BlockLayer::Background); // stone
+                            }
                         }
+
                     }
                 }
 
@@ -81,25 +92,30 @@ impl Chunk {
                 if yf == height
                 && density > -0.8 {
                     data[x][y] = Block::new(2);
+                    background_data[x][y] = Block::new(1).with_layer(BlockLayer::Background); // dirt
                 }
             }
         }
 
         Self {
             position: (_x,_y),
-            data
+            data,
+            background_data
         }
     }
 
-    pub fn create_mesh(&self) -> (Mesh, Collider) {
+    pub fn create_mesh(&self) -> (Mesh, Mesh, Collider) {
 
         let mut vertices: Vec<[f32; 3]> = vec![];
+        let mut bg_vertices: Vec<[f32; 3]> = vec![];
         let mut collider_vertices: Vec<Vec2> = vec![];
 
         let mut indices: Vec<u32> = vec![];
+        let mut bg_indices: Vec<u32> = vec![];
         let mut collider_indices: Vec<[u32; 3]> = vec![];
         
         let mut colors: Vec<[f32; 4]> = vec![];
+        let mut bg_colors: Vec<[f32; 4]> = vec![];
 
         for y in 0..CHUNK_SIZE {
             for x in 0..CHUNK_SIZE {
@@ -133,15 +149,42 @@ impl Chunk {
 
                     indices.extend([base_index, base_index + 2, base_index + 3]);
                     collider_indices.push([base_index, base_index + 2, base_index + 3]);
+                }
+                else if self.background_data[x][y].id != 0 {
+                    bg_vertices.extend([
+                        [x as f32 * BLOCK_SIZE_PX + BLOCK_SIZE_PX, y as f32 * BLOCK_SIZE_PX + BLOCK_SIZE_PX, -1.0],
+                        [x as f32 * BLOCK_SIZE_PX, y as f32 * BLOCK_SIZE_PX + BLOCK_SIZE_PX, -1.0],
+                        [x as f32 * BLOCK_SIZE_PX, y as f32 * BLOCK_SIZE_PX, -1.0],
+                        [x as f32 * BLOCK_SIZE_PX + BLOCK_SIZE_PX, y as f32 * BLOCK_SIZE_PX, -1.0],
+                    ]);
 
+                    let color = match self.background_data[x][y].id {
+                        1 => [0.4, 0.1, 0.1, 1.0],
+                        2 => [0.1, 0.4, 0.1, 1.0],
+                        3 => [0.1, 0.1, 0.3, 1.0],
+                        _ => [1.0; 4]
+                    };
+
+                    bg_colors.extend([color; 4]);
+
+                    let base_index = bg_vertices.len() as u32 - 4;
+                    bg_indices.extend([base_index, base_index + 1, base_index + 2]);
+                    bg_indices.extend([base_index, base_index + 2, base_index + 3]);
                 }
             }
         }
 
-        (Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD)
+        let mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD)
             .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertices)
             .with_inserted_attribute(Mesh::ATTRIBUTE_COLOR, colors)
-            .with_inserted_indices(Indices::U32(indices)), Collider::trimesh(collider_vertices, collider_indices))
+            .with_inserted_indices(Indices::U32(indices));
+
+        let bg_mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD)
+            .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, bg_vertices)
+            .with_inserted_attribute(Mesh::ATTRIBUTE_COLOR, bg_colors)
+            .with_inserted_indices(Indices::U32(bg_indices));
+
+        (mesh, bg_mesh, Collider::trimesh(collider_vertices, collider_indices))
     }
 }
 
@@ -158,7 +201,7 @@ fn draw_chunk(
     mut world: ResMut<super::World>,
 ) {
     for ev in ev_draw_chunk.read() {
-        let (mesh, collider) = ev.chunk.create_mesh();
+        let (mesh, bg_mesh, collider) = ev.chunk.create_mesh();
 
         let chunk_entity = commands.spawn((
             Mesh2d(meshes.add(mesh)),
@@ -169,7 +212,12 @@ fn draw_chunk(
             )),
             collider,
             Friction::coefficient(0.0)
-        )).id();
+        ))
+        .with_child((
+            Mesh2d(meshes.add(bg_mesh)),
+            MeshMaterial2d(materials.add(ColorMaterial::default()))
+        ))
+        .id();
 
         if world.chunk_entites.contains_key(&ev.chunk.position) {
             commands.entity(*world.chunk_entites.get(&ev.chunk.position).unwrap()).despawn_recursive();

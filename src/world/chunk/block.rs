@@ -27,4 +27,9 @@ impl Block<'_>{
             durability: 2,
         }
     }
+
+    pub fn with_layer(&mut self, layer: BlockLayer) -> Self {
+        self.layer = layer;
+        *self
+    }
 }
