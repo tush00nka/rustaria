@@ -44,7 +44,11 @@ impl Chunk {
                 let yf = y as f64 + _y as f64 * CHUNK_SIZE as f64;
 
                 let spread = 0.05;
-                let height = (perlin.get([xf * spread]) + CHUNK_SIZE as f64 / 2.).floor();
+                let oct1 = perlin.get([xf * spread]);
+                let oct2 = perlin.get([xf * spread * 0.25]);
+                let oct3 = perlin.get([xf * spread * 2.]);
+
+                let height = (oct1+oct2+oct3 + CHUNK_SIZE as f64 / 2.).floor();
 
                 let oct1 = simplex.get([xf * spread, yf * spread]);
                 let oct2 = simplex.get([xf * spread * 0.25, yf * spread * 0.25]);
@@ -54,7 +58,17 @@ impl Chunk {
                 let density = oct1+oct2+oct3+oct4;
 
                 if yf < height {
-                    if density > -0.1 {
+
+                    let density_check;
+
+                    if yf > height/3. {
+                        density_check = -0.9;
+                    }
+                    else {
+                        density_check = -0.1;
+                    }
+
+                    if density > density_check {
                         data[x][y] = Block::new(1); // dirt
 
                         if density > 0.6 && yf < height / 3. {
@@ -65,7 +79,7 @@ impl Chunk {
 
                 // grass
                 if yf == height
-                && density > -0.1 {
+                && density > -0.8 {
                     data[x][y] = Block::new(2);
                 }
             }
