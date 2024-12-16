@@ -1,0 +1,31 @@
+{
+    "blocks": [
+        {
+            "id": 0,
+            "texture_name": "none",
+            "is_solid": false,
+            "durability": 0
+        },
+
+        {
+            "id": 1,
+            "texture_name": "dirt.png",
+            "is_solid": true,
+            "durability": 1
+        },
+
+        {
+            "id": 2,
+            "texture_name": "grass.png",
+            "is_solid": true,
+            "durability": 1
+        },
+
+        {
+            "id": 3,
+            "texture_name": "stone.png",
+            "is_solid": true,
+            "durability": 2
+        }
+    ]
+}

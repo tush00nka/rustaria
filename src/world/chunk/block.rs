@@ -8,7 +8,7 @@ pub enum BlockLayer {
 pub struct Block<'a> {
     pub id: u32,
     texture_name: &'a str,
-    layer: BlockLayer,
+    pub layer: BlockLayer,
     is_solid: bool,
     durability: u8,
 }

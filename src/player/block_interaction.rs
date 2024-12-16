@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::{mouse_position::MousePosition, world::{chunk::block::BlockLayer, BreakBlock}, BLOCK_SIZE_PX};
+use crate::{mouse_position::MousePosition, world::{chunk::block::{Block, BlockLayer}, SetBlock}, BLOCK_SIZE_PX};
 
 use super::Player;
 
@@ -13,7 +13,7 @@ impl Plugin for BlockInteractionPlugin {
         
         app
             .add_systems(Startup, spawn_selection_box)
-            .add_systems(Update, (toggle_selection_mode, update_selected_position, move_selection_box, break_blocks));
+            .add_systems(Update, (toggle_selection_mode, update_selected_position, move_selection_box, break_blocks, place_blocks));
     }
 }
 
@@ -104,7 +104,7 @@ fn break_blocks(
     mouse_button: Res<ButtonInput<MouseButton>>,
     keyboard: Res<ButtonInput<KeyCode>>,
     selected: Res<SelectedBlock>,
-    mut ev_break_block: EventWriter<BreakBlock>,
+    mut ev_break_block: EventWriter<SetBlock>,
 ) {
     if mouse_button.just_pressed(MouseButton::Left) {
 
@@ -116,9 +116,36 @@ fn break_blocks(
             layer = BlockLayer::Foreground;
         }
 
-        ev_break_block.send(BreakBlock {
+        ev_break_block.send(SetBlock {
+            block: Block::new(0),
             position: selected.position,
             layer,
+            can_overwrite: true,
+        });
+    }
+}
+
+fn place_blocks(
+    mouse_button: Res<ButtonInput<MouseButton>>,
+    keyboard: Res<ButtonInput<KeyCode>>,
+    selected: Res<SelectedBlock>,
+    mut ev_break_block: EventWriter<SetBlock>,
+) {
+    if mouse_button.just_pressed(MouseButton::Right) {
+
+        let layer;
+        if keyboard.pressed(KeyCode::ShiftLeft) {
+            layer = BlockLayer::Background;
+        }
+        else {
+            layer = BlockLayer::Foreground;
+        }
+
+        ev_break_block.send(SetBlock {
+            block: Block::new(2),
+            position: selected.position,
+            layer,
+            can_overwrite: false,
         });
     }
 }

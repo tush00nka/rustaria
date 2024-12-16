@@ -14,11 +14,11 @@ impl Plugin for WorldPlugin {
         app.add_plugins(ChunkPlugin);
 
         app.init_resource::<World>();
-        app.add_event::<BreakBlock>();
+        app.add_event::<SetBlock>();
 
         app
             .add_systems(Startup, (generate_world_data, draw_world.after(generate_world_data)))
-            .add_systems(Update, break_block_at_position);
+            .add_systems(Update, set_block_at_position);
     }
 }
 
@@ -68,13 +68,15 @@ fn draw_world(
 }
 
 #[derive(Event)]
-pub struct BreakBlock{
+pub struct SetBlock{
+    pub block: Block<'static>,
     pub position: Vec2,
     pub layer: BlockLayer,
+    pub can_overwrite: bool,
 }
 
-fn break_block_at_position(
-    mut ev_break_block: EventReader<BreakBlock>,
+fn set_block_at_position(
+    mut ev_break_block: EventReader<SetBlock>,
     mut world: ResMut<World>,
     mut ev_draw_chunk: EventWriter<DrawChunk>,
 ) {
@@ -82,18 +84,25 @@ fn break_block_at_position(
         let (chunk_x, chunk_y) = ((ev.position.x / CHUNK_SIZE as f32 / BLOCK_SIZE_PX).floor() as i32,
                                             (ev.position.y / CHUNK_SIZE as f32 / BLOCK_SIZE_PX).floor() as i32);
 
-        println!("chunk: ({chunk_x},{chunk_y})");
-
         let Some(chunk) = world.get_chunk_mut(chunk_x, chunk_y) else { return; };
 
         let (block_x, block_y) = ((ev.position.x / BLOCK_SIZE_PX - (chunk_x as f32 * CHUNK_SIZE as f32)) as usize,
                                                 (ev.position.y / BLOCK_SIZE_PX - (chunk_y as f32 * CHUNK_SIZE as f32)) as usize);
 
-        println!("block: ({block_x},{block_y})");
 
         match ev.layer {
-            BlockLayer::Foreground => { chunk.data[block_x][block_y] = Block::new(0) },
-            BlockLayer::Background => { chunk.background_data[block_x][block_y] = Block::new(0) }
+            BlockLayer::Foreground => { 
+                if !ev.can_overwrite && chunk.data[block_x][block_y].id != 0 {
+                    return;
+                }
+                chunk.data[block_x][block_y] = ev.block;
+            },
+            BlockLayer::Background => { 
+                if !ev.can_overwrite && chunk.background_data[block_x][block_y].id != 0 {
+                    return;
+                }
+                chunk.background_data[block_x][block_y] = ev.block
+            }
         }
 
         ev_draw_chunk.send(DrawChunk { chunk: *chunk });
