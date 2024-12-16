@@ -3,13 +3,15 @@ use bevy_rapier2d::prelude::*;
 
 use crate::{BLOCK_SIZE_PX, CHUNK_SIZE};
 
+mod movement;
+use movement::PlayerMovementPlugin;
+
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(Startup, spawn_player)
-            .add_systems(FixedUpdate, (move_player, jump_player));
+        app.add_systems(Startup, spawn_player);
+        app.add_plugins(PlayerMovementPlugin);
     }
 }
 
@@ -53,37 +55,4 @@ fn spawn_player(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut ma
         },
         Friction::coefficient(0.0)
     ));
-}
-
-fn move_player(
-    mut player_query: Query<(&mut Velocity, &Player)>,
-    keyboard: Res<ButtonInput<KeyCode>>,
-    time: Res<Time>
-) {
-    let Ok((mut velocity, player)) = player_query.get_single_mut() else { return };
-
-    let direction;
-
-    if keyboard.pressed(KeyCode::KeyA) {
-        direction = -1.0;
-    }
-    else if keyboard.pressed(KeyCode::KeyD) {
-        direction = 1.0;
-    }
-    else {
-        direction = 0.0;
-    }
-
-    velocity.linvel.x = direction * player.speed * time.delta_secs();
-}
-
-fn jump_player(
-    mut player_query: Query<(&mut Velocity, &Player)>,
-    keyboard: Res<ButtonInput<KeyCode>>,
-) {
-    let Ok((mut velocity, player)) = player_query.get_single_mut() else { return };
-
-    if keyboard.just_pressed(KeyCode::Space) {
-        velocity.linvel.y = player.jump_force;
-    }
 }
