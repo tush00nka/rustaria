@@ -14,11 +14,11 @@ impl Plugin for PlayerMovementPlugin {
 }
 
 fn move_player(
-    mut player_query: Query<(&mut Velocity, &Player)>,
+    mut q_player: Query<(&mut Velocity, &Player)>,
     keyboard: Res<ButtonInput<KeyCode>>,
     time: Res<Time>
 ) {
-    let Ok((mut velocity, player)) = player_query.get_single_mut() else { return };
+    let Ok((mut velocity, player)) = q_player.get_single_mut() else { return };
 
     let direction;
 
@@ -36,12 +36,12 @@ fn move_player(
 }
 
 fn jump_player(
-    mut player_query: Query<(&mut Velocity, &Transform, &Player, &Collider)>,
+    mut q_player: Query<(&mut Velocity, &Transform, &Player, &Collider)>,
     keyboard: Res<ButtonInput<KeyCode>>,
-    rapier_context_query: Query<&RapierContext>,
+    q_rapier_context: Query<&RapierContext>,
 ) {
-    let Ok((mut velocity, transform, player, collider)) = player_query.get_single_mut() else { return };
-    let Ok(rapier_context) = rapier_context_query.get_single() else { return };
+    let Ok((mut velocity, transform, player, collider)) = q_player.get_single_mut() else { return };
+    let Ok(rapier_context) = q_rapier_context.get_single() else { return };
 
     if keyboard.just_pressed(KeyCode::Space) {
         let Some((_, hit)) = rapier_context.cast_shape(

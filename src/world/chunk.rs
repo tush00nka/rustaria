@@ -2,10 +2,10 @@ use std::hash::{Hash, Hasher};
 
 use bevy_rapier2d::prelude::*;
 use bevy::{asset::RenderAssetUsages, prelude::*, render::mesh::{Indices, PrimitiveTopology}};
-
-mod block;
-use block::*;
 use noise::{NoiseFn, Perlin, Simplex};
+
+pub mod block;
+use block::*;
 
 use crate::CHUNK_SIZE;
 use crate::BLOCK_SIZE_PX;
@@ -14,7 +14,7 @@ pub struct ChunkPlugin;
 
 impl Plugin for ChunkPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<DrawChunkEvent>();
+        app.add_event::<DrawChunk>();
 
         app.add_systems(Update, draw_chunk);
     }
@@ -146,7 +146,7 @@ impl Chunk {
 }
 
 #[derive(Event)]
-pub struct DrawChunkEvent {
+pub struct DrawChunk {
     pub chunk: Chunk,
 }
 
@@ -154,12 +154,13 @@ fn draw_chunk(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut ev_draw_chunk: EventReader<DrawChunkEvent>,
+    mut ev_draw_chunk: EventReader<DrawChunk>,
+    mut world: ResMut<super::World>,
 ) {
     for ev in ev_draw_chunk.read() {
         let (mesh, collider) = ev.chunk.create_mesh();
 
-        commands.spawn((
+        let chunk_entity = commands.spawn((
             Mesh2d(meshes.add(mesh)),
             MeshMaterial2d(materials.add(ColorMaterial::default())),
             Transform::default().with_translation(Vec3::new(
@@ -168,6 +169,12 @@ fn draw_chunk(
             )),
             collider,
             Friction::coefficient(0.0)
-        ));
+        )).id();
+
+        if world.chunk_entites.contains_key(&ev.chunk.position) {
+            commands.entity(*world.chunk_entites.get(&ev.chunk.position).unwrap()).despawn_recursive();
+            world.chunk_entites.remove(&ev.chunk.position);
+        }
+        world.chunk_entites.insert(ev.chunk.position, chunk_entity);
     }
 }

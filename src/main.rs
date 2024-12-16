@@ -17,6 +17,9 @@ use camera::CameraPlugin;
 mod player;
 use player::PlayerPlugin;
 
+mod mouse_position;
+use mouse_position::MousePositionPlugin;
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins
@@ -36,6 +39,7 @@ fn main() {
         .add_plugins(WorldPlugin)
         .add_plugins(CameraPlugin)
         .add_plugins(PlayerPlugin)
+        .add_plugins(MousePositionPlugin)
         .run();
 }     
 

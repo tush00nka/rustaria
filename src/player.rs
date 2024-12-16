@@ -6,12 +6,15 @@ use crate::{BLOCK_SIZE_PX, CHUNK_SIZE};
 mod movement;
 use movement::PlayerMovementPlugin;
 
+mod block_interaction;
+use block_interaction::BlockInteractionPlugin;
+
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_player);
-        app.add_plugins(PlayerMovementPlugin);
+        app.add_plugins((PlayerMovementPlugin, BlockInteractionPlugin));
     }
 }
 
