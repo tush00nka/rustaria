@@ -11,8 +11,8 @@ impl Plugin for InventoryPlugin {
     }
 }
 
-#[derive(Clone, Copy)]
-struct ItemSlot {
+#[derive(Clone, Copy, Debug)]
+pub struct ItemSlot {
     item: Option<Item>,
     amount: u32,
 }
@@ -23,9 +23,9 @@ impl ItemSlot {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Inventory {
-    items: Vec<ItemSlot>,
+    pub items: Vec<ItemSlot>,
 }
 
 impl Inventory {
@@ -67,6 +67,7 @@ impl Inventory {
             if slot.item.is_none() {
                 slot.item = Some(item);
                 slot.amount = 1;
+                return;
             }
         }
     }

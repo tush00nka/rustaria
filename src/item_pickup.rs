@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::{inventory::item::{Item, ItemDatabase}, player::Player, BLOCK_SIZE_PX};
+use crate::{inventory::{item::{Item, ItemDatabase}, Inventory}, player::Player, BLOCK_SIZE_PX};
 
 pub struct ItemPickupPlugin;
 
@@ -52,13 +52,15 @@ fn spawn_item_pickup(
 
 fn pull_to_player(
     mut commands: Commands,
-    q_player: Query<&Transform, (With<Player>, Without<ItemPickup>)>,
+    mut q_player: Query<(&Transform, &mut Inventory), (With<Player>, Without<ItemPickup>)>,
     mut q_pickup: Query<(Entity, &mut Velocity, &Transform, &ItemPickup), Without<Player>>,
     time: Res<Time>,
 ) {
-    let Ok(player_transform) = q_player.get_single() else { return };
+    let Ok((player_transform, mut inventory)) = q_player.get_single_mut() else { return };
 
-    for (pickup_entity, mut pickup_velocity, pickup_transform, _item_pickup) in q_pickup.iter_mut() {
+    for (pickup_entity, mut pickup_velocity, pickup_transform, item_pickup) in q_pickup.iter_mut() {
+        if !inventory.has_room(item_pickup.item) { continue; };
+
         let distance = pickup_transform.translation.distance(player_transform.translation);
 
         if distance < BLOCK_SIZE_PX * 6. {
@@ -67,7 +69,10 @@ fn pull_to_player(
         }
 
         if distance < BLOCK_SIZE_PX {
+            inventory.add_item(item_pickup.item);
+            println!("{:?}", inventory.items);
             commands.entity(pickup_entity).despawn_recursive();
+            return;
         }
     }
 }
