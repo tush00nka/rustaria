@@ -21,7 +21,6 @@ pub enum BlockLayer {
 #[derive(Clone, Copy)]
 pub struct Block {
     pub id: u32,
-    pub layer: BlockLayer,
     is_solid: bool,
     durability: u8,
 }
@@ -29,19 +28,9 @@ pub struct Block {
 impl Block {
     pub const AIR: Block = Block {
         id: 0,
-        layer: BlockLayer::Foreground,
         is_solid: false,
         durability: 0
     };
-
-    pub fn with_layer(&self, layer: BlockLayer) -> Block {
-        Block {
-            id: self.id,
-            layer,
-            is_solid: self.is_solid,
-            durability: self.durability
-        }
-    }
 }
 
 #[derive(Resource, Deserialize)]
@@ -58,7 +47,6 @@ impl BlockDatabase {
 
         Block {
             id,
-            layer: BlockLayer::Foreground,
             is_solid,
             durability,
         }

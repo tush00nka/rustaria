@@ -89,10 +89,10 @@ impl Chunk {
                     }
 
                     if block_density > density_check {
-                        self.background_data[x][y] = block_pool.dirt.with_layer(BlockLayer::Background); // dirt
+                        self.background_data[x][y] = block_pool.dirt; // dirt
                     }
                     else {
-                        self.background_data[x][y] = block_pool.stone.with_layer(BlockLayer::Background); // stone
+                        self.background_data[x][y] = block_pool.stone; // stone
                     }                    
 
                     if cave_density > density_check {
@@ -109,7 +109,7 @@ impl Chunk {
                 if yf == height
                 && cave_density > -0.8 {
                     self.data[x][y] = block_pool.grass;
-                    self.background_data[x][y] = block_pool.dirt.with_layer(BlockLayer::Background); // dirt
+                    self.background_data[x][y] = block_pool.dirt; // dirt
                 }
             }
         }

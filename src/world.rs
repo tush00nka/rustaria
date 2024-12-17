@@ -29,6 +29,7 @@ pub struct World {
 }
 
 impl World {
+    #[allow(unused)]
     pub fn get_chunk(&self, x: i32, y: i32) -> Option<&Chunk> {
         if self.chunks.contains_key(&(x,y)) {
             return Some(self.chunks.get(&(x,y)).unwrap());

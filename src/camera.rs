@@ -27,7 +27,7 @@ fn spawn_camera(mut commands: Commands) {
 fn follow_player(
     mut camera_query: Query<&mut Transform, (With<Camera>, Without<Player>)>,
     player_query: Query<&Transform, (With<Player>, Without<Camera>)>,
-    time: Res<Time>,
+    // time: Res<Time>,
 ) {
     let Ok(mut camera_transform) = camera_query.get_single_mut() else { return };
     let Ok(player_transform) = player_query.get_single() else {  return };
