@@ -30,22 +30,20 @@ pub struct ChunkBlockPool {
 #[derive(Clone, Copy)]
 pub struct Chunk {
     pub position: (i32, i32),
-    pub block_pool: ChunkBlockPool,
     pub data: [[Block; CHUNK_SIZE]; CHUNK_SIZE],
     pub background_data: [[Block; CHUNK_SIZE]; CHUNK_SIZE],
 }
 
 impl Chunk {
-    pub fn new(_x: i32, _y: i32, pool: ChunkBlockPool) -> Self {
+    pub fn new(_x: i32, _y: i32) -> Self {
         Self {
             position: (_x,_y),
-            block_pool: pool,
             data: [[Block::AIR; CHUNK_SIZE]; CHUNK_SIZE],
             background_data: [[Block::AIR; CHUNK_SIZE]; CHUNK_SIZE]
         }
     }
 
-    pub fn fill_block_data(&mut self) {
+    pub fn fill_block_data(&mut self, block_pool: ChunkBlockPool) {
         let (_x, _y) = self.position;
 
         let mut hasher = std::hash::DefaultHasher::new();
@@ -91,27 +89,27 @@ impl Chunk {
                     }
 
                     if block_density > density_check {
-                        self.background_data[x][y] = self.block_pool.dirt.with_layer(BlockLayer::Background); // dirt
+                        self.background_data[x][y] = block_pool.dirt.with_layer(BlockLayer::Background); // dirt
                     }
                     else {
-                        self.background_data[x][y] = self.block_pool.stone.with_layer(BlockLayer::Background); // stone
+                        self.background_data[x][y] = block_pool.stone.with_layer(BlockLayer::Background); // stone
                     }                    
 
                     if cave_density > density_check {
                         if block_density > density_check {
-                            self.data[x][y] = self.block_pool.dirt; // dirt
+                            self.data[x][y] = block_pool.dirt; // dirt
                             continue;
                         }
                         
-                        self.data[x][y] = self.block_pool.stone; // stone
+                        self.data[x][y] = block_pool.stone; // stone
                     }
                 }
 
                 // grass
                 if yf == height
                 && cave_density > -0.8 {
-                    self.data[x][y] = self.block_pool.grass;
-                    self.background_data[x][y] = self.block_pool.grass.with_layer(BlockLayer::Background); // dirt
+                    self.data[x][y] = block_pool.grass;
+                    self.background_data[x][y] = block_pool.dirt.with_layer(BlockLayer::Background); // dirt
                 }
             }
         }

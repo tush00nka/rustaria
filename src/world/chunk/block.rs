@@ -34,9 +34,13 @@ impl Block {
         durability: 0
     };
 
-    pub fn with_layer(&mut self, layer: BlockLayer) -> Self {
-        self.layer = layer;
-        *self
+    pub fn with_layer(&self, layer: BlockLayer) -> Block {
+        Block {
+            id: self.id,
+            layer,
+            is_solid: self.is_solid,
+            durability: self.durability
+        }
     }
 }
 

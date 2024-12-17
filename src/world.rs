@@ -49,13 +49,13 @@ impl World {
 fn generate_world_data(mut world: ResMut<World>, block_database: Res<BlockDatabase>) {
     for y in -8..1 {
         for x in -8..8 {
-            let mut chunk = Chunk::new(x, y, ChunkBlockPool {
+            let mut chunk = Chunk::new(x, y);
+
+            chunk.fill_block_data(ChunkBlockPool {
                 grass: block_database.get_by_id(2),
                 dirt: block_database.get_by_id(1),
                 stone: block_database.get_by_id(3)
             });
-
-            chunk.fill_block_data();
             world.chunks.insert((x,y), chunk);
         }
     }
