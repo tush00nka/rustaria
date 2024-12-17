@@ -20,6 +20,12 @@ use player::PlayerPlugin;
 mod mouse_position;
 use mouse_position::MousePositionPlugin;
 
+mod inventory;
+use inventory::InventoryPlugin;
+
+mod item_pickup;
+use item_pickup::ItemPickupPlugin;
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins
@@ -40,6 +46,8 @@ fn main() {
         .add_plugins(CameraPlugin)
         .add_plugins(PlayerPlugin)
         .add_plugins(MousePositionPlugin)
+        .add_plugins(InventoryPlugin)
+        .add_plugins(ItemPickupPlugin)
         .run();
 }     
 

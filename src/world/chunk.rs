@@ -238,6 +238,7 @@ fn draw_chunk(
                 ev.chunk.position.1 as f32 * CHUNK_SIZE as f32 * BLOCK_SIZE_PX, 0.0
             )),
             collider,
+            CollisionGroups::new(Group::GROUP_2, Group::GROUP_1 | Group::GROUP_3),
             Friction::coefficient(0.0),
             Restitution::coefficient(0.0),
         ))

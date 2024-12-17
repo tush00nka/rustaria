@@ -17,7 +17,7 @@ fn spawn_camera(mut commands: Commands) {
         Camera2d::default(),
         Msaa::Off,
         OrthographicProjection {
-            scale: 1.0,
+            scale: 0.5,
             ..OrthographicProjection::default_2d()
         },
     ));

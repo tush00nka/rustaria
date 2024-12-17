@@ -1,0 +1,28 @@
+{
+    "items": [
+
+        {
+            "id": 0,
+            "item_type": "Tool",
+            "texture": "textures/items/unnamed_tool.png"
+        },
+
+        {
+            "id": 1,
+            "item_type": {"Block": { "id": 1 }},
+            "texture": "textures/items/dirt_block.png"
+        },
+
+        {
+            "id": 2,
+            "item_type": {"Block": { "id": 2 }},
+            "texture": "textures/items/grass_block.png"
+        },
+
+        {
+            "id": 3,
+            "item_type": {"Block": { "id": 3 }},
+            "texture": "textures/items/stone_block.png"
+        }
+    ]
+}

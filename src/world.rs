@@ -6,7 +6,7 @@ pub mod chunk;
 use block::{Block, BlockDatabase, BlockLayer};
 use chunk::*;
 
-use crate::{BLOCK_SIZE_PX, CHUNK_SIZE};
+use crate::{inventory::item::Item, item_pickup::SpawnItemPickup, BLOCK_SIZE_PX, CHUNK_SIZE};
 
 pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
@@ -83,6 +83,7 @@ fn set_block_at_position(
     mut ev_break_block: EventReader<SetBlock>,
     mut world: ResMut<World>,
     mut ev_draw_chunk: EventWriter<DrawChunk>,
+    mut ev_spawn_item_pickup: EventWriter<SpawnItemPickup>,
 ) {
     for ev in ev_break_block.read() {
         let (chunk_x, chunk_y) = ((ev.position.x / CHUNK_SIZE as f32 / BLOCK_SIZE_PX).floor() as i32,
@@ -93,20 +94,30 @@ fn set_block_at_position(
         let (block_x, block_y) = ((ev.position.x / BLOCK_SIZE_PX - (chunk_x as f32 * CHUNK_SIZE as f32)) as usize,
                                                 (ev.position.y / BLOCK_SIZE_PX - (chunk_y as f32 * CHUNK_SIZE as f32)) as usize);
 
+        let block_to_replace;
 
         match ev.layer {
             BlockLayer::Foreground => { 
                 if !ev.can_overwrite && chunk.data[block_x][block_y].id != 0 {
                     return;
                 }
+                block_to_replace = chunk.data[block_x][block_y];
                 chunk.data[block_x][block_y] = ev.block;
             },
             BlockLayer::Background => { 
                 if !ev.can_overwrite && chunk.background_data[block_x][block_y].id != 0 {
                     return;
                 }
+                block_to_replace = chunk.background_data[block_x][block_y];
                 chunk.background_data[block_x][block_y] = ev.block
             }
+        }
+
+        if ev.block.id == 0 && block_to_replace.id != 0 {
+            ev_spawn_item_pickup.send(SpawnItemPickup {
+                item: Item::from_block_id(block_to_replace.id),
+                position: Vec2::new(ev.position.x + BLOCK_SIZE_PX/2., ev.position.y + BLOCK_SIZE_PX/2.),
+            });
         }
 
         ev_draw_chunk.send(DrawChunk { chunk: *chunk });

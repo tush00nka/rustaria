@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::{BLOCK_SIZE_PX, CHUNK_SIZE};
+use crate::{inventory::Inventory, BLOCK_SIZE_PX, CHUNK_SIZE};
 
 mod movement;
 use movement::PlayerMovementPlugin;
@@ -56,6 +56,9 @@ fn spawn_player(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut ma
             scale: Vec3::new(BLOCK_SIZE_PX, BLOCK_SIZE_PX*2., 1.),
             ..default()
         },
-        Friction::coefficient(0.0)
+        Ccd::enabled(),
+        CollisionGroups::new(Group::GROUP_1, Group::GROUP_2),
+        Friction::coefficient(0.0),
+        Inventory::new(9)
     ));
 }
