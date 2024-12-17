@@ -15,12 +15,13 @@ impl Plugin for CameraPlugin {
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         Camera2d::default(),
+        Msaa::Off,
         OrthographicProjection {
             scale: 1.0,
             ..OrthographicProjection::default_2d()
         },
     ));
-    commands.insert_resource(ClearColor(Color::BLACK));
+    commands.insert_resource(ClearColor(Color::hsl(178., 0.45, 0.43)));
 }
 
 fn follow_player(
@@ -31,5 +32,6 @@ fn follow_player(
     let Ok(mut camera_transform) = camera_query.get_single_mut() else { return };
     let Ok(player_transform) = player_query.get_single() else {  return };
 
-    camera_transform.translation = camera_transform.translation.lerp(player_transform.translation.with_z(camera_transform.translation.z), 10.0 * time.delta_secs());
+    // camera_transform.translation = camera_transform.translation.lerp(player_transform.translation.with_z(camera_transform.translation.z), 10.0 * time.delta_secs());
+    camera_transform.translation = player_transform.translation.with_z(camera_transform.translation.z);
 }

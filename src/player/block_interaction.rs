@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::{mouse_position::MousePosition, world::{chunk::block::{Block, BlockLayer}, SetBlock}, BLOCK_SIZE_PX};
+use crate::{mouse_position::MousePosition, world::{chunk::block::{Block, BlockDatabase, BlockLayer}, SetBlock}, BLOCK_SIZE_PX};
 
 use super::Player;
 
@@ -27,7 +27,7 @@ fn spawn_selection_box(
 ) {
     commands.spawn((
         Mesh2d(meshes.add(Rectangle::default())),
-        MeshMaterial2d(materials.add(Color::WHITE.with_alpha(0.75))),
+        MeshMaterial2d(materials.add(Color::WHITE.with_alpha(0.5))),
         Transform::from_scale(Vec3::splat(BLOCK_SIZE_PX + 4.)),
         BlockSelectionBox,
     ));
@@ -117,7 +117,7 @@ fn break_blocks(
         }
 
         ev_break_block.send(SetBlock {
-            block: Block::new(0),
+            block: Block::AIR,
             position: selected.position,
             layer,
             can_overwrite: true,
@@ -130,6 +130,7 @@ fn place_blocks(
     keyboard: Res<ButtonInput<KeyCode>>,
     selected: Res<SelectedBlock>,
     mut ev_break_block: EventWriter<SetBlock>,
+    block_database: Res<BlockDatabase>,
 ) {
     if mouse_button.just_pressed(MouseButton::Right) {
 
@@ -142,7 +143,7 @@ fn place_blocks(
         }
 
         ev_break_block.send(SetBlock {
-            block: Block::new(2),
+            block: block_database.get_by_id(2),
             position: selected.position,
             layer,
             can_overwrite: false,

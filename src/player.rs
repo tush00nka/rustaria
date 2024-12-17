@@ -19,7 +19,7 @@ impl Plugin for PlayerPlugin {
 }
 
 #[derive(Component)]
-#[require(RigidBody(dynamic_rb), LockedAxes(rotation_locked), Collider(box_collider), GravityScale, Velocity)]
+#[require(RigidBody(dynamic_rb), LockedAxes(rotation_locked), Collider(collider), GravityScale, Velocity)]
 pub struct Player {
     speed: f32,
     jump_force: f32,
@@ -42,8 +42,8 @@ fn rotation_locked() -> LockedAxes {
     LockedAxes::ROTATION_LOCKED
 }
 
-fn box_collider() -> Collider {
-    Collider::cuboid(0.4, 0.5)
+fn collider() -> Collider {
+    Collider::capsule(Vec2::new(0.0, -0.25), Vec2::new(0.0, 0.25), 0.25)
 }
 
 fn spawn_player(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {
@@ -53,7 +53,7 @@ fn spawn_player(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut ma
         MeshMaterial2d(materials.add(Color::WHITE)),
         Transform {
             translation: Vec3::new(0.0, BLOCK_SIZE_PX * CHUNK_SIZE as f32, 0.0),
-            scale: Vec3::new(BLOCK_SIZE_PX*2., BLOCK_SIZE_PX*3., 1.),
+            scale: Vec3::new(BLOCK_SIZE_PX, BLOCK_SIZE_PX*2., 1.),
             ..default()
         },
         Friction::coefficient(0.0)

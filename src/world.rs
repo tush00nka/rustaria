@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 
 pub mod chunk;
-use block::{Block, BlockLayer};
+use block::{Block, BlockDatabase, BlockLayer};
 use chunk::*;
 
 use crate::{BLOCK_SIZE_PX, CHUNK_SIZE};
@@ -17,7 +17,7 @@ impl Plugin for WorldPlugin {
         app.add_event::<SetBlock>();
 
         app
-            .add_systems(Startup, (generate_world_data, draw_world.after(generate_world_data)))
+            .add_systems(PostStartup, (generate_world_data, draw_world.after(generate_world_data)))
             .add_systems(Update, set_block_at_position);
     }
 }
@@ -29,10 +29,6 @@ pub struct World {
 }
 
 impl World {
-    pub fn generate_chunk_at_position(&mut self, x: i32, y: i32) {
-        self.chunks.insert((x,y), Chunk::new(x,y));
-    }
-
     pub fn get_chunk(&self, x: i32, y: i32) -> Option<&Chunk> {
         if self.chunks.contains_key(&(x,y)) {
             return Some(self.chunks.get(&(x,y)).unwrap());
@@ -50,10 +46,17 @@ impl World {
     }
 }
 
-fn generate_world_data(mut world: ResMut<World>) {
+fn generate_world_data(mut world: ResMut<World>, block_database: Res<BlockDatabase>) {
     for y in -8..1 {
         for x in -8..8 {
-            world.generate_chunk_at_position(x, y);
+            let mut chunk = Chunk::new(x, y, ChunkBlockPool {
+                grass: block_database.get_by_id(2),
+                dirt: block_database.get_by_id(1),
+                stone: block_database.get_by_id(3)
+            });
+
+            chunk.fill_block_data();
+            world.chunks.insert((x,y), chunk);
         }
     }
 }
@@ -69,7 +72,7 @@ fn draw_world(
 
 #[derive(Event)]
 pub struct SetBlock{
-    pub block: Block<'static>,
+    pub block: Block,
     pub position: Vec2,
     pub layer: BlockLayer,
     pub can_overwrite: bool,
