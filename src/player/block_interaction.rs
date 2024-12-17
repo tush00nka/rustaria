@@ -106,7 +106,7 @@ fn break_blocks(
     selected: Res<SelectedBlock>,
     mut ev_break_block: EventWriter<SetBlock>,
 ) {
-    if mouse_button.just_pressed(MouseButton::Left) {
+    if mouse_button.pressed(MouseButton::Left) {
 
         let layer;
         if keyboard.pressed(KeyCode::ShiftLeft) {
@@ -132,7 +132,7 @@ fn place_blocks(
     mut ev_break_block: EventWriter<SetBlock>,
     block_database: Res<BlockDatabase>,
 ) {
-    if mouse_button.just_pressed(MouseButton::Right) {
+    if mouse_button.pressed(MouseButton::Right) {
 
         let layer;
         if keyboard.pressed(KeyCode::ShiftLeft) {
@@ -143,7 +143,7 @@ fn place_blocks(
         }
 
         ev_break_block.send(SetBlock {
-            block: block_database.get_by_id(2),
+            block: block_database.get_by_id(3),
             position: selected.position,
             layer,
             can_overwrite: false,

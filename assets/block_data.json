@@ -9,19 +9,31 @@
         {
             "id": 1,
             "is_solid": true,
-            "durability": 1
+            "durability": 2
         },
 
         {
             "id": 2,
             "is_solid": true,
-            "durability": 1
+            "durability": 2
         },
 
         {
             "id": 3,
             "is_solid": true,
+            "durability": 4
+        },
+
+        {
+            "id": 4,
+            "is_solid": true,
             "durability": 2
+        },
+
+        {
+            "id": 5,
+            "is_solid": true,
+            "durability": 1
         }
     ]
 }
