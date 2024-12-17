@@ -70,7 +70,6 @@ fn pull_to_player(
 
         if distance < BLOCK_SIZE_PX {
             inventory.add_item(item_pickup.item);
-            println!("{:?}", inventory.items);
             commands.entity(pickup_entity).despawn_recursive();
             return;
         }

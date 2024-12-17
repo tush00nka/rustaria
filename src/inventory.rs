@@ -13,7 +13,7 @@ impl Plugin for InventoryPlugin {
 
 #[derive(Clone, Copy, Debug)]
 pub struct ItemSlot {
-    item: Option<Item>,
+    pub item: Option<Item>,
     amount: u32,
 }
 

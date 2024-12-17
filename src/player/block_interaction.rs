@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::{mouse_position::MousePosition, world::{chunk::block::{Block, BlockDatabase, BlockLayer}, SetBlock}, BLOCK_SIZE_PX};
+use crate::{inventory::{item::ItemType, Inventory}, mouse_position::MousePosition, world::{self, chunk::block::{Block, BlockDatabase, BlockLayer}, SetBlock, World}, BLOCK_SIZE_PX};
 
-use super::Player;
+use super::{hotbar::Hotbar, Player};
 
 pub struct BlockInteractionPlugin;
 
@@ -129,24 +129,44 @@ fn place_blocks(
     mouse_button: Res<ButtonInput<MouseButton>>,
     keyboard: Res<ButtonInput<KeyCode>>,
     selected: Res<SelectedBlock>,
-    mut ev_break_block: EventWriter<SetBlock>,
+    mut ev_set_block: EventWriter<SetBlock>,
     block_database: Res<BlockDatabase>,
+    mut q_player: Query<&mut Inventory, With<Player>>,
+    hotbar: Res<Hotbar>,
+    world: Res<World>,
 ) {
+    let Ok(mut inventory) = q_player.get_single_mut() else { return }; 
+
     if mouse_button.pressed(MouseButton::Right) {
 
-        let layer;
-        if keyboard.pressed(KeyCode::ShiftLeft) {
-            layer = BlockLayer::Background;
-        }
-        else {
-            layer = BlockLayer::Foreground;
-        }
+        let Some(selected_item) = inventory.items[hotbar.selected_slot].item else { return };
 
-        ev_break_block.send(SetBlock {
-            block: block_database.get_by_id(3),
-            position: selected.position,
-            layer,
-            can_overwrite: false,
-        });
+        match selected_item.item_type {
+            ItemType::Block(id) => {
+                if inventory.has_item(selected_item, 1) {
+                
+                    let layer;
+                    if keyboard.pressed(KeyCode::ShiftLeft) {
+                        layer = BlockLayer::Background;
+                    }
+                    else {
+                        layer = BlockLayer::Foreground;
+                    }
+
+                    let Some(block) = world.get_block(selected.position.x, selected.position.y, layer) else { return; };
+                    if block.id != 0 { return; };
+
+                    inventory.remove_item(selected_item);
+
+                    ev_set_block.send(SetBlock {
+                        block: block_database.get_by_id(id),
+                        position: selected.position,
+                        layer,
+                        can_overwrite: false,
+                    });
+                }
+            },
+            _ => return
+        }
     }
 }

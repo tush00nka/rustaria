@@ -45,6 +45,26 @@ impl World {
 
         None
     }
+
+    pub fn get_block(&self, x: f32, y: f32, layer: BlockLayer) -> Option<Block> {
+        let (chunk_x, chunk_y) = ((x / CHUNK_SIZE as f32 / BLOCK_SIZE_PX).floor() as i32,
+                                            (y / CHUNK_SIZE as f32 / BLOCK_SIZE_PX).floor() as i32);
+
+        let Some(chunk) = self.get_chunk(chunk_x, chunk_y) else { return None };
+
+        let (block_x, block_y) = ((x / BLOCK_SIZE_PX - (chunk_x as f32 * CHUNK_SIZE as f32)) as usize,
+                                                (y / BLOCK_SIZE_PX - (chunk_y as f32 * CHUNK_SIZE as f32)) as usize);
+
+        match layer {
+            BlockLayer::Foreground => {
+                return Some(chunk.data[block_x][block_y]);
+            },
+            BlockLayer::Background => {
+                return Some(chunk.background_data[block_x][block_y]);
+            }
+        }
+        
+    }
 }
 
 fn generate_world_data(mut world: ResMut<World>, block_database: Res<BlockDatabase>) {
