@@ -18,18 +18,20 @@ pub enum BlockLayer {
     Foreground,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Block {
     pub id: u32,
-    is_solid: bool,
-    durability: u8,
+    pub is_solid: bool,
+    pub durability: u8,
+    pub drop_item: u32,
 }
 
 impl Block {
     pub const AIR: Block = Block {
         id: 0,
         is_solid: false,
-        durability: 0
+        durability: 0,
+        drop_item: 0
     };
 }
 
@@ -44,11 +46,13 @@ impl BlockDatabase {
 
         let is_solid = block_data.get("is_solid").unwrap().as_bool().unwrap();
         let durability = block_data.get("durability").unwrap().as_u64().unwrap() as u8;
+        let drop_item = block_data.get("drop_item").unwrap().as_u64().unwrap() as u32;
 
         Block {
             id,
             is_solid,
             durability,
+            drop_item
         }
     }
 }

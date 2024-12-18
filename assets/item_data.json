@@ -23,6 +23,18 @@
             "id": 3,
             "item_type": {"Block": { "id": 3 }},
             "texture": "textures/items/stone_block.png"
+        },
+
+        {
+            "id": 4,
+            "item_type": {"Block": { "id": 4 }},
+            "texture": "textures/items/log_block.png"
+        },
+
+        {
+            "id": 5,
+            "item_type": {"Block": { "id": 5 }},
+            "texture": "textures/items/leaves_block.png"
         }
     ]
 }

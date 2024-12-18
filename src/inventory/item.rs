@@ -24,18 +24,6 @@ pub struct Item {
     pub item_type: ItemType,
 }
 
-impl Item {
-    // todo: сделать так, чтобы при разных id
-    // блока и предмета можно было сопоставить,
-    // какой предмет к какому блоку относится
-    pub fn from_block_id(id: u32) -> Self {
-        Self {
-            id,
-            item_type: ItemType::Block(id),
-        }
-    }
-}
-
 #[derive(Resource)]
 pub struct ItemDatabase {
     pub items: Vec<Value>,

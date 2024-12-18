@@ -3,37 +3,43 @@
         {
             "id": 0,
             "is_solid": false,
-            "durability": 0
+            "durability": 0,
+            "drop_item": 0
         },
 
         {
             "id": 1,
             "is_solid": true,
-            "durability": 2
+            "durability": 2,
+            "drop_item": 1
         },
 
         {
             "id": 2,
             "is_solid": true,
-            "durability": 2
+            "durability": 2,
+            "drop_item": 2
         },
 
         {
             "id": 3,
             "is_solid": true,
-            "durability": 4
+            "durability": 4,
+            "drop_item": 3
         },
 
         {
             "id": 4,
             "is_solid": true,
-            "durability": 2
+            "durability": 2,
+            "drop_item": 4
         },
 
         {
             "id": 5,
             "is_solid": true,
-            "durability": 1
+            "durability": 1,
+            "drop_item": 5
         }
     ]
 }

@@ -7,7 +7,7 @@ use block::{Block, BlockDatabase, BlockLayer};
 use chunk::*;
 
 use crate::{
-    inventory::item::Item,
+    inventory::item::ItemDatabase,
     item_pickup::SpawnItemPickup,
     BLOCK_SIZE_PX,
     CHUNK_SIZE
@@ -22,7 +22,7 @@ impl Plugin for WorldPlugin {
         app.add_event::<SetBlock>();
 
         app
-            .add_systems(PostStartup, (generate_world_data, draw_world.after(generate_world_data)))
+            .add_systems(Startup, generate_world)
             .add_systems(Update, set_block_at_position);
     }
 }
@@ -72,27 +72,16 @@ impl World {
     }
 }
 
-fn generate_world_data(mut world: ResMut<World>, block_database: Res<BlockDatabase>) {
+fn generate_world (
+    mut ev_generate_chunk_data: EventWriter<GenerateChunkData>
+) {
     for y in -8..1 {
         for x in -8..8 {
-            let mut chunk = Chunk::new(x, y);
-
-            chunk.fill_block_data(ChunkBlockPool {
-                grass: block_database.get_by_id(2),
-                dirt: block_database.get_by_id(1),
-                stone: block_database.get_by_id(3)
+            ev_generate_chunk_data.send(GenerateChunkData {
+                position: (x, y)
             });
-            world.chunks.insert((x,y), chunk);
-        }
-    }
-}
 
-fn draw_world(
-    world: Res<World>,
-    mut ev_draw_chunk: EventWriter<DrawChunk>,
-) {
-    for (_, chunk) in world.chunks.iter() {
-        ev_draw_chunk.send(DrawChunk { chunk: *chunk });
+        }
     }
 }
 
@@ -109,6 +98,8 @@ fn set_block_at_position(
     mut world: ResMut<World>,
     mut ev_draw_chunk: EventWriter<DrawChunk>,
     mut ev_spawn_item_pickup: EventWriter<SpawnItemPickup>,
+    item_database: Res<ItemDatabase>,
+    block_database: Res<BlockDatabase>,
 ) {
     for ev in ev_break_block.read() {
         let (chunk_x, chunk_y) = ((ev.position.x / CHUNK_SIZE as f32 / BLOCK_SIZE_PX).floor() as i32,
@@ -140,7 +131,7 @@ fn set_block_at_position(
 
         if ev.block.id == 0 && block_to_replace.id != 0 {
             ev_spawn_item_pickup.send(SpawnItemPickup {
-                item: Item::from_block_id(block_to_replace.id),
+                item: item_database.get_by_id(block_database.get_by_id(block_to_replace.id).drop_item),
                 position: Vec2::new(ev.position.x + BLOCK_SIZE_PX/2., ev.position.y + BLOCK_SIZE_PX/2.),
             });
         }
