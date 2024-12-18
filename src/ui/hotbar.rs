@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use crate::{inventory::{item::ItemDatabase, Inventory}, player::hotbar::Hotbar};
+use crate::{
+    inventory::{item::ItemDatabase, Inventory},
+    player::hotbar::Hotbar
+};
 
 pub struct HotbarPlugin;
 
@@ -41,6 +44,7 @@ fn spawn_hotbar(
             Node {
                 width: Val::Percent(50.) / 16.,
                 height: Val::Percent(50.) / 9.,
+                justify_content: JustifyContent::Center,
                 ..default()
             },
             HotbarSlot(i),
@@ -48,8 +52,9 @@ fn spawn_hotbar(
         let slot_item = commands.spawn((
             ImageNode::solid_color(Color::WHITE),
             Node {
-                width: Val::Percent(100.),
-                height: Val::Percent(100.),
+                width: Val::Percent(80.),
+                height: Val::Percent(80.),
+                align_self: AlignSelf::Center,
                 ..default()
             },
             HotbarSlotImage(i),
@@ -57,6 +62,11 @@ fn spawn_hotbar(
         let slot_amount = commands.spawn((
             Text::new("0"),
             TextColor::WHITE,
+            TextFont {
+                font_size: 14.,
+                ..default()
+            },
+            TextLayout::new_with_no_wrap(),
             HotbarSlotText(0),
         )).id();
 
@@ -80,7 +90,7 @@ fn update_hotbar_selection(
     .collect();
 
     for i in 0..9 {
-        slots[i].0.color = Color::WHITE;
+        slots[i].0.color = Color::WHITE.with_alpha(0.5);
         if hotbar.selected_slot == i {
             slots[i].0.color = Color::srgb(0.0, 1.0, 0.0);
         }

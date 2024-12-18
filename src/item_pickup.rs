@@ -1,7 +1,11 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::{inventory::{item::{Item, ItemDatabase}, Inventory}, player::Player, BLOCK_SIZE_PX};
+use crate::{
+    inventory::{item::{Item, ItemDatabase}, Inventory},
+    player::Player,
+    BLOCK_SIZE_PX
+};
 
 pub struct ItemPickupPlugin;
 

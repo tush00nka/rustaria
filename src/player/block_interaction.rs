@@ -1,7 +1,15 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::{inventory::{item::ItemType, Inventory}, mouse_position::MousePosition, world::{self, chunk::block::{Block, BlockDatabase, BlockLayer}, SetBlock, World}, BLOCK_SIZE_PX};
+use crate::{
+    inventory::{item::ItemType, Inventory},
+    mouse_position::MousePosition,
+    world::{
+        chunk::block::{Block, BlockDatabase, BlockLayer},
+        SetBlock,
+        World
+    },
+    BLOCK_SIZE_PX};
 
 use super::{hotbar::Hotbar, Player};
 

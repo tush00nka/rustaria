@@ -6,7 +6,12 @@ pub mod chunk;
 use block::{Block, BlockDatabase, BlockLayer};
 use chunk::*;
 
-use crate::{inventory::item::Item, item_pickup::SpawnItemPickup, BLOCK_SIZE_PX, CHUNK_SIZE};
+use crate::{
+    inventory::item::Item,
+    item_pickup::SpawnItemPickup,
+    BLOCK_SIZE_PX,
+    CHUNK_SIZE
+};
 
 pub struct WorldPlugin;
 impl Plugin for WorldPlugin {
