@@ -9,7 +9,7 @@ use movement::PlayerMovementPlugin;
 mod block_interaction;
 use block_interaction::BlockInteractionPlugin;
 
-mod hotbar;
+pub mod hotbar;
 use hotbar::HotbarPlugin;
 
 pub struct PlayerPlugin;

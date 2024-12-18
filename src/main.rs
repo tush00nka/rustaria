@@ -26,6 +26,9 @@ use inventory::InventoryPlugin;
 mod item_pickup;
 use item_pickup::ItemPickupPlugin;
 
+mod ui;
+use ui::UiPlugin;
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins
@@ -48,6 +51,7 @@ fn main() {
         .add_plugins(MousePositionPlugin)
         .add_plugins(InventoryPlugin)
         .add_plugins(ItemPickupPlugin)
+        .add_plugins(UiPlugin)
         .run();
 }     
 
