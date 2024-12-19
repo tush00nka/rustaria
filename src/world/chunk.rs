@@ -280,15 +280,18 @@ fn generate_chunk_data(
             for j in 0..structure.height() {
                 for i in 0..structure.width() {
                     let block_id = structure.data[j][i];
+                    let bg_block_id = structure.bg_data[j][i];
     
                     if x+i < CHUNK_SIZE {
                         if y+j < CHUNK_SIZE {
-                            chunk.data[x+i][y+j] = block_database.get_by_id(block_id); // log
+                            chunk.data[x+i][y+j] = block_database.get_by_id(block_id);
+                            chunk.background_data[x+i][y+j] = block_database.get_by_id(bg_block_id);
                         }
                         else {
                             if let Some(neighbour) = world.get_chunk_mut(_x, _y+1) {
-                                neighbour.data[x+i][j] = block_database.get_by_id(block_id); // log
-                                ev_draw.send(DrawChunk { chunk: *neighbour });
+                                neighbour.data[x+i][j] = block_database.get_by_id(block_id);
+                                chunk.background_data[x+i][j] = block_database.get_by_id(bg_block_id);
+                                // ev_draw.send(DrawChunk { chunk: *neighbour });
                             }
                         }
                     }
@@ -296,14 +299,16 @@ fn generate_chunk_data(
                         println!("asd");
                         if y+j < CHUNK_SIZE {
                             if let Some(neighbour) = world.get_chunk_mut(_x+1, _y) {
-                                neighbour.data[i][y+j] = block_database.get_by_id(block_id); // log
-                                ev_draw.send(DrawChunk { chunk: *neighbour });
+                                neighbour.data[i][y+j] = block_database.get_by_id(block_id);
+                                chunk.background_data[i][y+j] = block_database.get_by_id(bg_block_id);
+                                // ev_draw.send(DrawChunk { chunk: *neighbour });
                             }
                         }
                         else {
                             if let Some(neighbour) = world.get_chunk_mut(_x+1, _y+1) {
-                                neighbour.data[i][j] = block_database.get_by_id(block_id); // log
-                                ev_draw.send(DrawChunk { chunk: *neighbour });
+                                neighbour.data[i][j] = block_database.get_by_id(block_id);
+                                chunk.background_data[i][j] = block_database.get_by_id(bg_block_id);
+                                // ev_draw.send(DrawChunk { chunk: *neighbour });
                             }
                         }
                     }

@@ -1,5 +1,6 @@
 pub struct BlockStructure {
     pub data: Vec<Vec<u32>>,
+    pub bg_data: Vec<Vec<u32>>,
 }
 
 impl BlockStructure {
@@ -18,7 +19,8 @@ impl BlockStructure {
         data.reverse();
 
         Self {
-            data
+            data,
+            bg_data: vec![vec![0; 5]; 4+logs as usize],
         }
     }
 
@@ -31,10 +33,14 @@ impl BlockStructure {
             vec![3,3,3,3,3,3],
         ];
 
+        let mut bg_data = vec![vec![3; 6]; 5];
+
         data.reverse();
+        bg_data.reverse();
 
         Self {
-            data
+            data,
+            bg_data
         }
     }
 
