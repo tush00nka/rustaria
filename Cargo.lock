@@ -3684,6 +3684,7 @@ dependencies = [
  "bevy_rapier2d",
  "glam",
  "noise",
+ "rand",
  "serde",
  "serde_json",
 ]

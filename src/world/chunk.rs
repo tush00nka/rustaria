@@ -3,13 +3,16 @@ use std::hash::{Hash, Hasher};
 use bevy_rapier2d::prelude::*;
 use bevy::{asset::RenderAssetUsages, prelude::*, render::mesh::{Indices, PrimitiveTopology}};
 use noise::{NoiseFn, Perlin, Simplex};
+use rand::{Rng, SeedableRng};
 
 pub mod block;
 use block::*;
 
+mod block_structure;
+use block_structure::*;
+
 use crate::{CHUNK_SIZE, SEED};
 use crate::BLOCK_SIZE_PX;
-
 pub struct ChunkPlugin;
 
 impl Plugin for ChunkPlugin {
@@ -202,6 +205,8 @@ fn generate_chunk_data(
         let simplex = Simplex::new(seed);
         let perlin = Perlin::new(seed);
 
+        let mut block_structures: Vec<((usize, usize), BlockStructure)> = vec![];
+
         for y in 0..CHUNK_SIZE {
             for x in 0..CHUNK_SIZE {
 
@@ -263,47 +268,42 @@ fn generate_chunk_data(
                     // trees
                     if x % 16 == 0 {
 
-                        let block_grid = [
-                            [0, 5, 5, 5, 0],
-                            [0, 5, 5, 5, 0],
-                            [5, 5, 4, 5, 5],
-                            [5, 5, 4, 5, 5],
-                            [0, 0, 4, 0, 0],
-                            [0, 0, 4, 0, 0],
-                        ];
+                        // let structure = BlockStructure::new_tree(rand::thread_rng().gen_range(2..6));
+                        let structure = BlockStructure::new_house();
+                        block_structures.push(((x,y), structure));
+                    }
+                }
+            }
+        }
 
-                        let y = y+1;
-
-                        for j in 0..6 {
-                            for i in 0..5 {
-                                let block_id = block_grid[5-j][i];
-                                if block_id == 0 { continue; };
-
-                                if x+i < CHUNK_SIZE {
-                                    if y+j < CHUNK_SIZE {
-                                        chunk.data[x+i][y+j] = block_database.get_by_id(block_id); // log
-                                    }
-                                    else {
-                                        if let Some(neighbour) = world.get_chunk_mut(_x, _y+1) {
-                                            neighbour.data[x+i][j] = block_database.get_by_id(block_id); // log
-                                            ev_draw.send(DrawChunk { chunk: *neighbour });
-                                        }
-                                    }
-                                }
-                                else {
-                                    if y+j < CHUNK_SIZE {
-                                        if let Some(neighbour) = world.get_chunk_mut(_x+1, _y) {
-                                            neighbour.data[i][y+j] = block_database.get_by_id(block_id); // log
-                                            ev_draw.send(DrawChunk { chunk: *neighbour });
-                                        }
-                                    }
-                                    else {
-                                        if let Some(neighbour) = world.get_chunk_mut(_x+1, _y+1) {
-                                            neighbour.data[i][j] = block_database.get_by_id(block_id); // log
-                                            ev_draw.send(DrawChunk { chunk: *neighbour });
-                                        }
-                                    }
-                                }
+        for ((x, y), structure) in block_structures.iter() {
+            for j in 0..structure.height() {
+                for i in 0..structure.width() {
+                    let block_id = structure.data[j][i];
+    
+                    if x+i < CHUNK_SIZE {
+                        if y+j < CHUNK_SIZE {
+                            chunk.data[x+i][y+j] = block_database.get_by_id(block_id); // log
+                        }
+                        else {
+                            if let Some(neighbour) = world.get_chunk_mut(_x, _y+1) {
+                                neighbour.data[x+i][j] = block_database.get_by_id(block_id); // log
+                                ev_draw.send(DrawChunk { chunk: *neighbour });
+                            }
+                        }
+                    }
+                    else {
+                        println!("asd");
+                        if y+j < CHUNK_SIZE {
+                            if let Some(neighbour) = world.get_chunk_mut(_x+1, _y) {
+                                neighbour.data[i][y+j] = block_database.get_by_id(block_id); // log
+                                ev_draw.send(DrawChunk { chunk: *neighbour });
+                            }
+                        }
+                        else {
+                            if let Some(neighbour) = world.get_chunk_mut(_x+1, _y+1) {
+                                neighbour.data[i][j] = block_database.get_by_id(block_id); // log
+                                ev_draw.send(DrawChunk { chunk: *neighbour });
                             }
                         }
                     }
