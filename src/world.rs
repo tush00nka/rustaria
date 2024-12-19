@@ -75,8 +75,8 @@ impl World {
 fn generate_world (
     mut ev_generate_chunk_data: EventWriter<GenerateChunkData>
 ) {
-    for y in -8..1 {
-        for x in -8..8 {
+    for y in (-8..1).rev() {
+        for x in (-8..8).rev() {
             ev_generate_chunk_data.send(GenerateChunkData {
                 position: (x, y)
             });

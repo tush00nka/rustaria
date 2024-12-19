@@ -266,10 +266,9 @@ fn generate_chunk_data(
                     chunk.background_data[x][y] = block_database.get_by_id(1); // dirt
 
                     // trees
-                    if x % 16 == 0 {
+                    if x % 9 == 0 {
 
-                        // let structure = BlockStructure::new_tree(rand::thread_rng().gen_range(2..6));
-                        let structure = BlockStructure::new_house();
+                        let structure = BlockStructure::new_tree(rand::thread_rng().gen_range(2..6));
                         block_structures.push(((x,y), structure));
                     }
                 }
@@ -282,6 +281,8 @@ fn generate_chunk_data(
                     let block_id = structure.data[j][i];
                     let bg_block_id = structure.bg_data[j][i];
     
+                    if block_id == 0 && !structure.fill_air { continue; };
+
                     if x+i < CHUNK_SIZE {
                         if y+j < CHUNK_SIZE {
                             chunk.data[x+i][y+j] = block_database.get_by_id(block_id);
@@ -296,7 +297,6 @@ fn generate_chunk_data(
                         }
                     }
                     else {
-                        println!("asd");
                         if y+j < CHUNK_SIZE {
                             if let Some(neighbour) = world.get_chunk_mut(_x+1, _y) {
                                 neighbour.data[i][y+j] = block_database.get_by_id(block_id);

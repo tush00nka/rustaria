@@ -1,6 +1,7 @@
 pub struct BlockStructure {
     pub data: Vec<Vec<u32>>,
     pub bg_data: Vec<Vec<u32>>,
+    pub fill_air: bool,
 }
 
 impl BlockStructure {
@@ -12,15 +13,14 @@ impl BlockStructure {
             vec![5, 5, 5, 5, 5],
         ];
 
-        for _ in 0..logs {
-            data.push(vec![0,0,4,0,0]);
-        }
+        data.append(&mut vec![vec![0,0,4,0,0]; logs as usize]);
 
         data.reverse();
 
         Self {
             data,
             bg_data: vec![vec![0; 5]; 4+logs as usize],
+            fill_air: false,
         }
     }
 
@@ -40,7 +40,8 @@ impl BlockStructure {
 
         Self {
             data,
-            bg_data
+            bg_data,
+            fill_air: true,
         }
     }
 
