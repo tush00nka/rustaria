@@ -1,17 +1,10 @@
 use bevy::prelude::*;
 
-use crate::{
-    inventory::{item::ItemDatabase, Inventory},
-    player::{hotbar::Hotbar, Player}
-};
+use crate::player::{hotbar::Hotbar, Player};
 
 use super::{
     inventory::{
-        reset_slot,
-        update_slot,
-        InventorySlot,
-        InventorySlotImage,
-        InventorySlotText
+        update_inventory_of, InventorySlot, InventorySlotImage, InventorySlotText
     },
     mode_manager::UiState
 };
@@ -22,7 +15,7 @@ impl Plugin for HotbarPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_systems(OnEnter(UiState::InGame), spawn_hotbar)
-            .add_systems(Update, (update_hotbar, update_hotbar_selection)
+            .add_systems(Update, (update_inventory_of::<Player>, update_hotbar_selection)
                 .run_if(in_state(UiState::InGame)));
     }
 }
@@ -48,6 +41,7 @@ fn spawn_hotbar(
             ImageNode::solid_color(Color::BLACK),
             Node {
                 justify_content: JustifyContent::Center,
+                align_content: AlignContent::Center,
                 ..default()
             },
             InventorySlot(i),
@@ -104,38 +98,3 @@ fn update_hotbar_selection(
         }
     }
 }
-
-fn update_hotbar(
-    q_player: Query<&Inventory, With<Player>>, // todo: add some <Changed> implementation
-    mut q_slot_images: Query<(&mut ImageNode, &InventorySlotImage)>,
-    mut q_slot_texts: Query<(&mut Text, &InventorySlotText)>,
-    item_database: Res<ItemDatabase>,
-    asset_server: Res<AssetServer>,
-) {
-    let Ok(inventory) = q_player.get_single() else { return };
-
-    let mut slot_images: Vec<(Mut<'_, ImageNode>, _)> = q_slot_images
-        .iter_mut()
-        .sort_by::<&InventorySlotImage>(|item1, item2| {
-            item1.0.partial_cmp(&item2.0).unwrap()
-        })
-        .collect();
-
-    let mut slot_texts: Vec<(Mut<'_, Text>, _)> = q_slot_texts
-        .iter_mut()
-        .sort_by::<&InventorySlotText>(|item1, item2| {
-            item1.0.partial_cmp(&item2.0).unwrap()
-        })
-        .collect();
-
-    for i in 0..9 {
-        if inventory.items[i].item.is_some() {
-            let item_image = asset_server.load(item_database.get_texture_by_id(inventory.items[i].item.unwrap().id));
-            update_slot(i, inventory, &mut slot_images[i].0, &mut slot_texts[i].0, item_image);
-        }
-        else {
-            reset_slot(&mut slot_images[i].0, &mut slot_texts[i].0);
-        }
-    }
-}
-

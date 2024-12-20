@@ -2,8 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     inventory::{
-        item::ItemDatabase,
-        Inventory
+        item::{Item, ItemDatabase}, Inventory
     },
     player::Player
 };
@@ -14,21 +13,41 @@ pub struct InventoryPlugin;
 
 impl Plugin for InventoryPlugin {
     fn build(&self, app: &mut App) {
+        app.init_resource::<CurrentDragItem>();
+
         app
             .add_systems(OnEnter(UiState::Management), spawn_player_inventory)
-            .add_systems(Update, update_inventory_of::<Player, 45>
-                .run_if(in_state(UiState::Management)));
+            .add_systems(Update, (
+                update_inventory_of::<Player>,
+                move_items_of::<Player>
+            ).run_if(in_state(UiState::Management)))
+            .add_systems(OnExit(UiState::Management), return_taken_item::<Player>);
     }
 }
 
 #[derive(Component)]
-pub struct InventorySlot(pub u32);
+pub struct InventorySlot(pub usize);
 
 #[derive(Component)]
-pub struct InventorySlotImage(pub u32);
+pub struct InventorySlotImage(pub usize);
 
 #[derive(Component)]
-pub struct InventorySlotText(pub u32);
+pub struct InventorySlotText(pub usize);
+
+#[derive(Resource, Default)]
+pub struct CurrentDragItem {
+    pub item: Option<Item>,
+    pub amount: u32,
+    pub slot_id: usize,
+}
+
+impl CurrentDragItem {
+    fn clear(&mut self) {
+        self.item = None;
+        self.amount = 0;
+        self.slot_id = 0;
+    }
+}
 
 fn spawn_player_inventory(
     mut commands: Commands,
@@ -53,9 +72,11 @@ fn spawn_player_inventory(
             ImageNode::solid_color(Color::BLACK.with_alpha(0.5)),
             Node {
                 justify_content: JustifyContent::Center,
+                align_content: AlignContent::Center,
                 ..default()
             },
             InventorySlot(i),
+            Button
         )).id();
         let slot_item = commands.spawn((
             ImageNode::solid_color(Color::WHITE),
@@ -68,16 +89,13 @@ fn spawn_player_inventory(
             InventorySlotImage(i),
         )).id();
         let slot_amount = commands.spawn((
-            Text::new("0"),
+            Text::new("  "),
             TextColor::WHITE,
             TextFont {
                 font_size: 14.,
                 ..default()
             },
-            TextLayout {
-                justify: JustifyText::Left,
-                linebreak: LineBreak::NoWrap,
-            },
+            TextLayout::new_with_no_wrap(),
             InventorySlotText(0),
         )).id();
 
@@ -91,36 +109,31 @@ fn spawn_player_inventory(
     .insert(StateScoped(UiState::Management));
 }
 
-fn update_inventory_of<S: Component, const LENGTH: usize>(
+pub fn update_inventory_of<S: Component>(
     q_player: Query<&Inventory, With<S>>, // todo: add some <Changed> implementation
-    mut q_slot_images: Query<(&mut ImageNode, &InventorySlotImage)>,
-    mut q_slot_texts: Query<(&mut Text, &InventorySlotText)>,
+    mut q_slot: Query<(&Children, &InventorySlot)>,
+    mut q_slot_images: Query<(&Children, &mut ImageNode)>,
+    mut q_slot_texts: Query<&mut Text>,
     item_database: Res<ItemDatabase>,
     asset_server: Res<AssetServer>,
 ) {
     let Ok(inventory) = q_player.get_single() else { return };
 
-    let mut slot_images: Vec<(Mut<'_, ImageNode>, _)> = q_slot_images
-        .iter_mut()
-        .sort_by::<&InventorySlotImage>(|item1, item2| {
-            item1.0.partial_cmp(&item2.0).unwrap()
-        })
-        .collect();
+    for (children, slot_id) in q_slot.iter_mut() {
+        let image_entity = *children.get(0).unwrap();
+        let (image_children, mut slot_image) = q_slot_images.get_mut(image_entity).unwrap();
 
-    let mut slot_texts: Vec<(Mut<'_, Text>, _)> = q_slot_texts
-        .iter_mut()
-        .sort_by::<&InventorySlotText>(|item1, item2| {
-            item1.0.partial_cmp(&item2.0).unwrap()
-        })
-        .collect();
+        let text_entity = *image_children.get(0).unwrap();
+        let mut slot_text= q_slot_texts.get_mut(text_entity).unwrap();
 
-    for i in 0..LENGTH {
-        if inventory.items[i].item.is_some() {
-            let item_image = asset_server.load(item_database.get_texture_by_id(inventory.items[i].item.unwrap().id));
-            update_slot(i, inventory, &mut slot_images[i].0, &mut slot_texts[i].0, item_image);
+        let id = slot_id.0;
+
+        if inventory.items[id].item.is_some() {
+            let item_image = asset_server.load(item_database.get_texture_by_id(inventory.items[id].item.unwrap().id));
+            update_slot(id, inventory, &mut slot_image, &mut slot_text, item_image);
         }
         else {
-            reset_slot(&mut slot_images[i].0, &mut slot_texts[i].0);
+            reset_slot(&mut slot_image, &mut slot_text);
         }
     }
 }
@@ -133,11 +146,58 @@ pub fn update_slot(id: usize, inventory: &Inventory, slot_image: &mut ImageNode,
         slot_text.0 = slot.amount.to_string();
     }
     else {
-        slot_text.0 = "".to_string();
+        slot_text.0 = "  ".to_string();
     }
 }
 
 pub fn reset_slot(slot_image: &mut ImageNode, slot_text: &mut Text) {
     slot_image.color = Color::WHITE.with_alpha(0.0);
     slot_text.0 = "".to_string();
+}
+
+fn move_items_of<S: Component>(
+    mut current_drag_item: ResMut<CurrentDragItem>,
+    q_slots: Query<(&Interaction, &InventorySlot), Changed<Interaction>>,
+    mut q_inventory: Query<&mut Inventory, With<S>>,
+) {
+    let Ok(mut inventory) = q_inventory.get_single_mut() else { return };
+
+    for (interaction, slot) in q_slots.iter() {
+        if *interaction == Interaction::Pressed {
+            if current_drag_item.item.is_none() {
+                current_drag_item.item = inventory.items[slot.0].item;
+                current_drag_item.amount = inventory.items[slot.0].amount;
+                current_drag_item.slot_id = slot.0;
+
+                inventory.items[slot.0].clear();
+            }
+            else {
+                if inventory.items[slot.0].item.is_none() {
+                    inventory.items[slot.0].item = current_drag_item.item;
+                    inventory.items[slot.0].amount = current_drag_item.amount;
+
+                    current_drag_item.clear();
+                }
+                else {
+                    inventory.items[current_drag_item.slot_id] = inventory.items[slot.0];
+                    inventory.items[slot.0].item = current_drag_item.item;
+                    inventory.items[slot.0].amount = current_drag_item.amount;
+                    current_drag_item.clear();
+                }
+            }
+        }
+    }
+}
+
+fn return_taken_item<S: Component>(
+    mut current_drag_item: ResMut<CurrentDragItem>,
+    mut q_inventory: Query<&mut Inventory, With<S>>,
+) {
+    let Ok(mut inventory) = q_inventory.get_single_mut() else { return };
+
+    if current_drag_item.item.is_some() {
+        inventory.items[current_drag_item.slot_id].item = current_drag_item.item;
+        inventory.items[current_drag_item.slot_id].amount = current_drag_item.amount;
+        current_drag_item.clear();
+    }
 }

@@ -11,14 +11,15 @@ impl Plugin for ItemPlugin {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug, Default)]
 pub enum ItemType {
     Block(u32),
     Tool,
+    #[default]
     Miscellaneous,
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug, Default)]
 pub struct Item {
     pub id: u32,
     pub item_type: ItemType,

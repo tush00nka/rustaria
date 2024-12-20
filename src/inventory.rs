@@ -22,7 +22,7 @@ impl ItemSlot {
         ItemSlot { item: None, amount: 0 }
     }
 
-    fn empty(&mut self) {
+    pub fn clear(&mut self) {
         self.amount = 0;
         self.item = None;
     }
@@ -102,7 +102,7 @@ impl Inventory {
             if slot.item == Some(item) {
                 slot.amount -= 1;
                 if slot.amount <= 0 {
-                    slot.empty();
+                    slot.clear();
                 }
                 return;
             }
@@ -113,7 +113,7 @@ impl Inventory {
         let slot= &mut self.items[slot_id]; 
         slot.amount -= 1;
         if slot.amount <= 0 {
-            slot.empty();
+            slot.clear();
         }
     }
 }
