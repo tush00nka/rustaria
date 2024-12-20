@@ -3,7 +3,7 @@ use std::hash::{Hash, Hasher};
 use bevy_rapier2d::prelude::*;
 use bevy::{asset::RenderAssetUsages, prelude::*, render::mesh::{Indices, PrimitiveTopology}};
 use noise::{NoiseFn, Perlin, Simplex};
-use rand::{Rng, SeedableRng};
+use rand::Rng;
 
 pub mod block;
 use block::*;
@@ -282,6 +282,7 @@ fn generate_chunk_data(
                     let bg_block_id = structure.bg_data[j][i];
     
                     if block_id == 0 && !structure.fill_air { continue; };
+                    // todo: make it not to fill bg aswell
 
                     if x+i < CHUNK_SIZE {
                         if y+j < CHUNK_SIZE {

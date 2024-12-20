@@ -18,8 +18,13 @@ pub struct ItemSlot {
 }
 
 impl ItemSlot {
-    fn empty() -> Self {
+    fn new() -> Self {
         ItemSlot { item: None, amount: 0 }
+    }
+
+    fn empty(&mut self) {
+        self.amount = 0;
+        self.item = None;
     }
 }
 
@@ -31,7 +36,7 @@ pub struct Inventory {
 impl Inventory {
     pub fn new(_size: usize) -> Self {
         Self {
-            items: vec![ItemSlot::empty(); _size],
+            items: vec![ItemSlot::new(); _size],
         }
     }
 
@@ -39,7 +44,9 @@ impl Inventory {
         // проверяем, если слот с таким же типом предмета есть
         for slot in self.items.iter() {
             if slot.item == Some(item) {
-                return true;
+                if slot.amount < item.max_stack {
+                    return true;
+                }
             }
         }
 
@@ -57,8 +64,10 @@ impl Inventory {
         // проверяем, если слот с таким же типом предмета есть
         for slot in self.items.iter_mut() {
             if slot.item == Some(item) {
-                slot.amount += 1;
-                return;
+                if slot.amount < item.max_stack {
+                    slot.amount += 1;
+                    return;
+                }
             }
         }
 
@@ -93,11 +102,18 @@ impl Inventory {
             if slot.item == Some(item) {
                 slot.amount -= 1;
                 if slot.amount <= 0 {
-                    slot.item = None;
-                    slot.amount = 0;
+                    slot.empty();
                 }
                 return;
             }
+        }
+    }
+
+    pub fn remove_item_from_slot(&mut self, slot_id: usize) {
+        let slot= &mut self.items[slot_id]; 
+        slot.amount -= 1;
+        if slot.amount <= 0 {
+            slot.empty();
         }
     }
 }

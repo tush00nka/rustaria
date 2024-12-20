@@ -66,7 +66,10 @@ fn spawn_hotbar(
                 font_size: 14.,
                 ..default()
             },
-            TextLayout::new_with_no_wrap(),
+            TextLayout {
+                justify: JustifyText::Left,
+                linebreak: LineBreak::NoWrap,
+            },
             HotbarSlotText(0),
         )).id();
 

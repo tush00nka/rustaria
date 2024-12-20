@@ -164,7 +164,7 @@ fn place_blocks(
                     let Some(block) = world.get_block(selected.position.x, selected.position.y, layer) else { return; };
                     if block.id != 0 { return; };
 
-                    inventory.remove_item(selected_item);
+                    inventory.remove_item_from_slot(hotbar.selected_slot);
 
                     ev_set_block.send(SetBlock {
                         block: block_database.get_by_id(id),

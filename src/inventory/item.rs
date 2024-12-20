@@ -22,6 +22,7 @@ pub enum ItemType {
 pub struct Item {
     pub id: u32,
     pub item_type: ItemType,
+    pub max_stack: u32,
 }
 
 #[derive(Resource)]
@@ -35,6 +36,8 @@ impl ItemDatabase {
         let item_type_map = item_data.get("item_type").unwrap().as_object().unwrap();
         let item_type;
         
+        let max_stack = item_data.get("max_stack").unwrap().as_u64().unwrap() as u32;
+
         // КОД ГОВА todo: разобраться с десериализацией enum'ов
         if  item_type_map.get("Tool").is_some() {
             item_type = ItemType::Tool;
@@ -48,7 +51,8 @@ impl ItemDatabase {
 
         Item {
             id,
-            item_type
+            item_type,
+            max_stack,
         }
     }
 

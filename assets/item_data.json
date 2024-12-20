@@ -4,37 +4,43 @@
         {
             "id": 0,
             "item_type": "Tool",
-            "texture": "textures/items/unnamed_tool.png"
+            "texture": "textures/items/unnamed_tool.png",
+            "max_stack": 1
         },
 
         {
             "id": 1,
             "item_type": {"Block": { "id": 1 }},
-            "texture": "textures/items/dirt_block.png"
+            "texture": "textures/items/dirt_block.png",
+            "max_stack": 99
         },
 
         {
             "id": 2,
             "item_type": {"Block": { "id": 2 }},
-            "texture": "textures/items/grass_block.png"
+            "texture": "textures/items/grass_block.png",
+            "max_stack": 99
         },
 
         {
             "id": 3,
             "item_type": {"Block": { "id": 3 }},
-            "texture": "textures/items/stone_block.png"
+            "texture": "textures/items/stone_block.png",
+            "max_stack": 99
         },
 
         {
             "id": 4,
             "item_type": {"Block": { "id": 4 }},
-            "texture": "textures/items/log_block.png"
+            "texture": "textures/items/log_block.png",
+            "max_stack": 99
         },
 
         {
             "id": 5,
             "item_type": {"Block": { "id": 5 }},
-            "texture": "textures/items/leaves_block.png"
+            "texture": "textures/items/leaves_block.png",
+            "max_stack": 99
         }
     ]
 }
