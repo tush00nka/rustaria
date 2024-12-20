@@ -34,20 +34,21 @@ pub struct ItemDatabase {
 impl ItemDatabase {
     pub fn get_by_id(&self, id: u32) -> Item {
         let item_data = self.items[id as usize].as_object().unwrap();
-        let item_type_map = item_data.get("item_type").unwrap().as_object().unwrap();
-        let item_type;
+        let mut item_type = ItemType::Miscellaneous;
         
         let max_stack = item_data.get("max_stack").unwrap().as_u64().unwrap() as u32;
 
-        // КОД ГОВНА todo: разобраться с десериализацией enum'ов
-        if  item_type_map.get("Tool").is_some() {
-            item_type = ItemType::Tool;
+        if let Some(item_type_map) = item_data.get("item_type").unwrap().as_object() {
+            if let Some(val) = item_type_map.get("Block") {
+                item_type = ItemType::Block(val.as_object().unwrap().get("id").unwrap().as_u64().unwrap() as u32);
+            }
         }
-        else if let Some(val) = item_type_map.get("Block") {
-            item_type = ItemType::Block(val.as_object().unwrap().get("id").unwrap().as_u64().unwrap() as u32);
-        }
-        else {
-            item_type = ItemType::Miscellaneous;
+        else if let Some(item_type_str) = item_data.get("item_type").unwrap().as_str() {
+            match item_type_str {
+                "Tool" => { item_type = ItemType::Tool },
+                "Miscellaneous" => { item_type = ItemType::Miscellaneous },
+                _ => {}
+            }
         }
 
         Item {

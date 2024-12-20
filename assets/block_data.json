@@ -40,6 +40,13 @@
             "is_solid": true,
             "durability": 1,
             "drop_item": 5
+        },
+
+        {
+            "id": 6,
+            "is_solid": false,
+            "durability": 1,
+            "drop_item": 6
         }
     ]
 }

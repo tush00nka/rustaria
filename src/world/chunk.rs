@@ -265,10 +265,16 @@ fn generate_chunk_data(
                     chunk.data[x][y] = block_database.get_by_id(2);
                     chunk.background_data[x][y] = block_database.get_by_id(1); // dirt
 
+                    let mut rng = rand::thread_rng();
+
+                    if x & 2 == 0 {
+                        chunk.data[x][y+1] = block_database.get_by_id(6); // thread
+                    }
+
                     // trees
                     if x % 9 == 0 {
 
-                        let structure = BlockStructure::new_tree(rand::thread_rng().gen_range(2..6));
+                        let structure = BlockStructure::new_tree(rng.gen_range(2..6));
                         block_structures.push(((x,y), structure));
                     }
                 }
@@ -293,7 +299,7 @@ fn generate_chunk_data(
                             if let Some(neighbour) = world.get_chunk_mut(_x, _y+1) {
                                 neighbour.data[x+i][j] = block_database.get_by_id(block_id);
                                 chunk.background_data[x+i][j] = block_database.get_by_id(bg_block_id);
-                                // ev_draw.send(DrawChunk { chunk: *neighbour });
+                                ev_draw.send(DrawChunk { chunk: *neighbour });
                             }
                         }
                     }
@@ -302,14 +308,14 @@ fn generate_chunk_data(
                             if let Some(neighbour) = world.get_chunk_mut(_x+1, _y) {
                                 neighbour.data[i][y+j] = block_database.get_by_id(block_id);
                                 chunk.background_data[i][y+j] = block_database.get_by_id(bg_block_id);
-                                // ev_draw.send(DrawChunk { chunk: *neighbour });
+                                ev_draw.send(DrawChunk { chunk: *neighbour });
                             }
                         }
                         else {
                             if let Some(neighbour) = world.get_chunk_mut(_x+1, _y+1) {
                                 neighbour.data[i][j] = block_database.get_by_id(block_id);
                                 chunk.background_data[i][j] = block_database.get_by_id(bg_block_id);
-                                // ev_draw.send(DrawChunk { chunk: *neighbour });
+                                ev_draw.send(DrawChunk { chunk: *neighbour });
                             }
                         }
                     }

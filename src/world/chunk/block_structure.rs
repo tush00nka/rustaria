@@ -1,3 +1,6 @@
+mod tree_generator;
+use tree_generator::*;
+
 pub struct BlockStructure {
     pub data: Vec<Vec<u32>>,
     pub bg_data: Vec<Vec<u32>>,
@@ -6,20 +9,38 @@ pub struct BlockStructure {
 
 impl BlockStructure {
     pub fn new_tree(logs: u32) -> Self {
+        // let mut tree = Tree::new();
+        // tree.grow();
+        // tree.generate_leaves();
+
+        // let mut data = vec![];
+
+        // for y in 0..tree.grid.len() {
+        //     let mut row = vec![];
+        //     for x in 0..tree.grid[0].len() {
+        //         let id = match tree.grid[x][y] {
+        //             Tile::Air => 0,
+        //             Tile::Leaves => 5,
+        //             _ => 4,
+        //         };
+        //         row.push(id as u32);
+        //     }
+        //     data.push(row);
+        // }
+
         let mut data = vec![
             vec![0, 5, 5, 5, 0],
             vec![0, 5, 5, 5, 0],
             vec![5, 5, 5, 5, 5],
             vec![5, 5, 5, 5, 5],
         ];
-
         data.append(&mut vec![vec![0,0,4,0,0]; logs as usize]);
 
         data.reverse();
 
         Self {
             data,
-            bg_data: vec![vec![0; 5]; 4+logs as usize],
+            bg_data: vec![vec![0; 16]; 16],
             fill_air: false,
         }
     }
