@@ -24,6 +24,7 @@ pub struct Block {
     pub is_solid: bool,
     pub durability: u8,
     pub drop_item: u32,
+    pub light: f32,
 }
 
 impl Block {
@@ -31,8 +32,13 @@ impl Block {
         id: 0,
         is_solid: false,
         durability: 0,
-        drop_item: 0
+        drop_item: 0,
+        light: 1.0,
     };
+
+    pub fn set_light(&mut self, light: f32) {
+        self.light = light;
+    }
 }
 
 #[derive(Resource, Deserialize)]
@@ -52,7 +58,8 @@ impl BlockDatabase {
             id,
             is_solid,
             durability,
-            drop_item
+            drop_item,
+            light: 1.0,
         }
     }
 }

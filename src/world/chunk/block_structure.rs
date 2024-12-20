@@ -1,6 +1,3 @@
-mod tree_generator;
-use tree_generator::*;
-
 pub struct BlockStructure {
     pub data: Vec<Vec<u32>>,
     pub bg_data: Vec<Vec<u32>>,

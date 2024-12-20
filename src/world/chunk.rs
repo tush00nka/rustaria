@@ -80,7 +80,8 @@ impl Chunk {
                         Vec2::new(x as f32 * BLOCK_SIZE_PX + BLOCK_SIZE_PX, y as f32 * BLOCK_SIZE_PX),
                     ]);
 
-                    let color = [1.0; 4];
+                    let light = self.data[x][y].light;
+                    let color = [light, light, light, 1.0];
                     colors.extend([color; 4]);
 
                     let uv_offset_x = (self.data[x][y].id as f32 * BLOCK_SIZE_PX) / 256.;
@@ -112,7 +113,8 @@ impl Chunk {
                         [x as f32 * BLOCK_SIZE_PX + BLOCK_SIZE_PX, y as f32 * BLOCK_SIZE_PX, -0.5],
                     ]);
 
-                    let color = [1.0; 4];
+                    let light = self.data[x][y].light;
+                    let color = [light, light, light, 1.0];
                     not_solid_colors.extend([color; 4]);
 
                     let uv_offset_x = (self.data[x][y].id as f32 * BLOCK_SIZE_PX) / 256.;
@@ -139,7 +141,8 @@ impl Chunk {
                         [x as f32 * BLOCK_SIZE_PX + BLOCK_SIZE_PX, y as f32 * BLOCK_SIZE_PX, -1.0],
                     ]);
 
-                    let color = [0.3, 0.3, 0.3, 1.0];
+                    let light = self.data[x][y].light;
+                    let color = [light/3., light/3., light/3., 1.0];
                     bg_colors.extend([color; 4]);
 
                     let uv_offset_x = (self.background_data[x][y].id as f32 * BLOCK_SIZE_PX) / 256.;
@@ -273,7 +276,6 @@ fn generate_chunk_data(
 
                     // trees
                     if x % 9 == 0 {
-
                         let structure = BlockStructure::new_tree(rng.gen_range(2..6));
                         block_structures.push(((x,y), structure));
                     }
