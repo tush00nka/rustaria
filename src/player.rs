@@ -62,6 +62,6 @@ fn spawn_player(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut ma
         Ccd::enabled(),
         CollisionGroups::new(Group::GROUP_1, Group::GROUP_2),
         Friction::coefficient(0.0),
-        Inventory::new(9)
+        Inventory::new(45)
     ));
 }
