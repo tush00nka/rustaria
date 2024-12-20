@@ -1,7 +1,7 @@
 use std::hash::{Hash, Hasher};
 
 use bevy_rapier2d::prelude::*;
-use bevy::{asset::RenderAssetUsages, prelude::*, render::mesh::{Indices, PrimitiveTopology}};
+use bevy::{asset::RenderAssetUsages, ecs::observer::EmitDynamicTrigger, prelude::*, render::mesh::{Indices, PrimitiveTopology}};
 use noise::{NoiseFn, Perlin, Simplex};
 use rand::Rng;
 
@@ -21,7 +21,7 @@ impl Plugin for ChunkPlugin {
         app
             .add_event::<GenerateChunkData>()
             .add_event::<DrawChunk>();
-        app.add_systems(Update, (generate_chunk_data, draw_chunk.after(generate_chunk_data)));
+        app.add_systems(Update, (generate_lightmap, generate_chunk_data, draw_chunk.after(generate_chunk_data)));
     }
 }
 
@@ -80,7 +80,7 @@ impl Chunk {
                         Vec2::new(x as f32 * BLOCK_SIZE_PX + BLOCK_SIZE_PX, y as f32 * BLOCK_SIZE_PX),
                     ]);
 
-                    let light = self.data[x][y].light;
+                    let light = self.data[x][y].light as f32 / 15.;
                     let color = [light, light, light, 1.0];
                     colors.extend([color; 4]);
 
@@ -113,7 +113,7 @@ impl Chunk {
                         [x as f32 * BLOCK_SIZE_PX + BLOCK_SIZE_PX, y as f32 * BLOCK_SIZE_PX, -0.5],
                     ]);
 
-                    let light = self.data[x][y].light;
+                    let light = self.data[x][y].light as f32 / 15.;
                     let color = [light, light, light, 1.0];
                     not_solid_colors.extend([color; 4]);
 
@@ -141,7 +141,7 @@ impl Chunk {
                         [x as f32 * BLOCK_SIZE_PX + BLOCK_SIZE_PX, y as f32 * BLOCK_SIZE_PX, -1.0],
                     ]);
 
-                    let light = self.data[x][y].light;
+                    let light = self.background_data[x][y].light as f32 / 15.;
                     let color = [light/3., light/3., light/3., 1.0];
                     bg_colors.extend([color; 4]);
 
@@ -200,7 +200,6 @@ fn generate_chunk_data(
     for ev in ev_generate.read() {
         let (_x, _y) = ev.position;
         let mut chunk = Chunk::new(_x, _y);
-        // let Some(chunk) = world.get_chunk_mut(_x, _y) else { return };
 
         let mut hasher = std::hash::DefaultHasher::new();
         SEED.hash(&mut hasher);
@@ -327,6 +326,55 @@ fn generate_chunk_data(
 
         world.chunks.insert((_x, _y), chunk);
         ev_draw.send(DrawChunk { chunk });
+    }
+}
+
+#[derive(Event)]
+pub struct UpdateChunkLight();
+
+fn generate_lightmap(
+    mut ev_draw: EventWriter<DrawChunk>,
+    mut world: ResMut<super::World>,
+    keyboard: Res<ButtonInput<KeyCode>>,
+) {
+    if keyboard.just_pressed(KeyCode::KeyL) {
+        for ((_x, _y), chunk) in world.chunks.iter_mut() {
+            for y in 1..CHUNK_SIZE-1 {
+                for x in 1..CHUNK_SIZE-1 {
+                    if chunk.data[x][y].light_emission > 0 {
+                        let emission = chunk.data[x][y].light_emission;
+                        chunk.data[x][y].light = emission;
+
+                        for j in 0..(emission as usize / 2) {
+                            for i in 0..(emission as usize / 2) {
+                                if x + i < CHUNK_SIZE
+                                && y + j < CHUNK_SIZE  {
+                                    chunk.data[x+i][y+j].light = emission - (i+j) as u8;
+                                    chunk.background_data[x+i][y+j].light = emission - (i+j) as u8;
+                                }
+                                if x as i32 - i as i32 >= 0 
+                                && y as i32 - j as i32 >= 0 {
+                                    chunk.data[x-i][y-j].light = emission - (i+j) as u8;
+                                    chunk.background_data[x-i][y-j].light = emission - (i+j) as u8;
+                                }
+                                if x + i < CHUNK_SIZE
+                                && y as i32 - j as i32 >= 0  {
+                                    chunk.data[x+i][y-j].light = emission - (i+j) as u8;
+                                    chunk.background_data[x+i][y-j].light = emission - (i+j) as u8;
+                                }
+                                if x as i32 - i as i32 >= 0 
+                                && y + j < CHUNK_SIZE {
+                                    chunk.data[x-i][y+j].light = emission - (i+j) as u8;
+                                    chunk.background_data[x-i][y+j].light = emission - (i+j) as u8;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            ev_draw.send(DrawChunk { chunk: *chunk });    
+        }
     }
 }
 

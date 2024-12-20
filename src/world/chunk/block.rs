@@ -18,13 +18,16 @@ pub enum BlockLayer {
     Foreground,
 }
 
+pub const MAX_LIGHT_LEVEL: u8 = 15;
+
 #[derive(Clone, Copy, Debug)]
 pub struct Block {
     pub id: u32,
     pub is_solid: bool,
     pub durability: u8,
     pub drop_item: u32,
-    pub light: f32,
+    pub light_emission: u8,
+    pub light: u8,
 }
 
 impl Block {
@@ -33,10 +36,11 @@ impl Block {
         is_solid: false,
         durability: 0,
         drop_item: 0,
-        light: 1.0,
+        light_emission: 0,
+        light: 0,
     };
 
-    pub fn set_light(&mut self, light: f32) {
+    pub fn set_light(&mut self, light: u8) {
         self.light = light;
     }
 }
@@ -53,13 +57,15 @@ impl BlockDatabase {
         let is_solid = block_data.get("is_solid").unwrap().as_bool().unwrap();
         let durability = block_data.get("durability").unwrap().as_u64().unwrap() as u8;
         let drop_item = block_data.get("drop_item").unwrap().as_u64().unwrap() as u32;
+        let light_emission = block_data.get("light_emission").unwrap().as_u64().unwrap() as u8;
 
         Block {
             id,
             is_solid,
             durability,
             drop_item,
-            light: 1.0,
+            light_emission, 
+            light: 0,
         }
     }
 }
