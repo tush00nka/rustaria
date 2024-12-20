@@ -29,7 +29,7 @@ use ui::UiPlugin;
 const CHUNK_SIZE: usize = 32;
 const BLOCK_SIZE_PX: f32 = 16.;
 
-const SEED: &'static str = "I LOVE LIKA";
+const SEED: &'static str = "I WANNA KMS";
 
 fn main() {
     App::new()

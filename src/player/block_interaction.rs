@@ -75,15 +75,12 @@ fn toggle_selection_mode(
 }
 
 fn update_selected_position(
-    q_player: Query<&Transform, (With<Player>, Without<BlockSelectionBox>)>, 
-    q_rapier_context: Query<&RapierContext>,
+    player_transform: Single<&Transform, (With<Player>, Without<BlockSelectionBox>)>, 
+    rapier_context: Single<&RapierContext>,
     mouse_position: Res<MousePosition>,
     mut selected: ResMut<SelectedBlock>,
 ) {
-    if selected.selection_mode == BlockSelectionMode::Raycasting {
-        let Ok(rapier_context) = q_rapier_context.get_single() else { return };
-        let Ok(player_transform) = q_player.get_single() else { return };
-    
+    if selected.selection_mode == BlockSelectionMode::Raycasting {    
         let ray_dir = (mouse_position.0 - player_transform.translation.truncate()).normalize();
     
         let Some((_, hit)) = rapier_context.cast_ray_and_get_normal(
@@ -104,10 +101,9 @@ fn update_selected_position(
 }
 
 fn move_selection_box(
-    mut q_selection: Query<&mut Transform, (With<BlockSelectionBox>, Without<Player>)>,
+    mut selection_transform: Single<&mut Transform, (With<BlockSelectionBox>, Without<Player>)>,
     selected: Res<SelectedBlock>,
 ) {
-    let Ok(mut selection_transform) = q_selection.get_single_mut() else { return };
     selection_transform.translation = (selected.position + Vec2::splat(BLOCK_SIZE_PX/2.)).extend(2.0);
 }
 

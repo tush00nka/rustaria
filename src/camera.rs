@@ -25,13 +25,10 @@ fn spawn_camera(mut commands: Commands) {
 }
 
 fn follow_player(
-    mut camera_query: Query<&mut Transform, (With<Camera>, Without<Player>)>,
-    player_query: Query<&Transform, (With<Player>, Without<Camera>)>,
+    mut camera_transform: Single<&mut Transform, (With<Camera>, Without<Player>)>,
+    player_transform: Single<&Transform, (With<Player>, Without<Camera>)>,
     // time: Res<Time>,
 ) {
-    let Ok(mut camera_transform) = camera_query.get_single_mut() else { return };
-    let Ok(player_transform) = player_query.get_single() else {  return };
-
     // camera_transform.translation = camera_transform.translation.lerp(player_transform.translation.with_z(camera_transform.translation.z), 10.0 * time.delta_secs());
     camera_transform.translation = player_transform.translation.with_z(camera_transform.translation.z);
 }

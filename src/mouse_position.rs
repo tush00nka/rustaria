@@ -15,12 +15,10 @@ pub struct MousePosition(pub Vec2);
 
 fn update_mouse_position(
     mut mouse_position: ResMut<MousePosition>,
-    q_windows: Query<&Window>,
-    q_camera: Query<(&Camera, &GlobalTransform)>, 
+    window: Single<&Window>,
+    camera: Single<(&Camera, &GlobalTransform)>, 
 ) {
-    let window = q_windows.single();
-    let (camera, camera_transform) = q_camera.single();
-
+    let (camera, camera_transform) = camera.into_inner();
     if let Some(world_position) = window
         .cursor_position()
         .and_then(|cursor| camera.viewport_to_world_2d(camera_transform, cursor).ok()) {

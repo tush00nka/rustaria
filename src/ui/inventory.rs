@@ -102,15 +102,13 @@ fn spawn_player_inventory(
 }
 
 pub fn update_inventory_of<S: Component>(
-    q_player: Query<&Inventory, With<S>>, // todo: add some <Changed> implementation
+    inventory: Single<&Inventory, With<S>>, // todo: add some <Changed> implementation
     mut q_slot: Query<(&Children, &InventorySlot)>,
     mut q_slot_images: Query<(&Children, &mut ImageNode)>,
     mut q_slot_texts: Query<&mut Text>,
     item_database: Res<ItemDatabase>,
     asset_server: Res<AssetServer>,
 ) {
-    let Ok(inventory) = q_player.get_single() else { return };
-
     for (children, slot_id) in q_slot.iter_mut() {
         let image_entity = *children.get(0).unwrap();
         let (image_children, mut slot_image) = q_slot_images.get_mut(image_entity).unwrap();
@@ -122,7 +120,7 @@ pub fn update_inventory_of<S: Component>(
 
         if inventory.items[id].item.is_some() {
             let item_image = asset_server.load(item_database.get_texture_by_id(inventory.items[id].item.unwrap().id));
-            update_slot(id, inventory, &mut slot_image, &mut slot_text, item_image);
+            update_slot(id, &inventory, &mut slot_image, &mut slot_text, item_image);
         }
         else {
             reset_slot(&mut slot_image, &mut slot_text);

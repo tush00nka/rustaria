@@ -39,7 +39,7 @@ impl ItemDatabase {
         
         let max_stack = item_data.get("max_stack").unwrap().as_u64().unwrap() as u32;
 
-        // КОД ГОВА todo: разобраться с десериализацией enum'ов
+        // КОД ГОВНА todo: разобраться с десериализацией enum'ов
         if  item_type_map.get("Tool").is_some() {
             item_type = ItemType::Tool;
         }
