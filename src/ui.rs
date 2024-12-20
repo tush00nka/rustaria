@@ -3,7 +3,7 @@ use bevy::prelude::*;
 mod hotbar;
 use hotbar::HotbarPlugin;
 
-mod mode_manager;
+pub mod mode_manager;
 use mode_manager::ModeManagerPlugin;
 
 mod inventory;

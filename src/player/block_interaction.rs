@@ -2,14 +2,11 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use crate::{
-    inventory::{item::ItemType, Inventory},
-    mouse_position::MousePosition,
-    world::{
+    inventory::{item::ItemType, Inventory}, mouse_position::MousePosition, ui::mode_manager::UiState, world::{
         chunk::block::{Block, BlockDatabase, BlockLayer},
         SetBlock,
         World
-    },
-    BLOCK_SIZE_PX};
+    }, BLOCK_SIZE_PX};
 
 use super::{hotbar::Hotbar, Player};
 
@@ -20,8 +17,13 @@ impl Plugin for BlockInteractionPlugin {
         app.init_resource::<SelectedBlock>();
         
         app
-            .add_systems(Startup, spawn_selection_box)
-            .add_systems(Update, (toggle_selection_mode, update_selected_position, move_selection_box, break_blocks, place_blocks));
+            .add_systems(OnEnter(UiState::InGame), spawn_selection_box)
+            .add_systems(Update, (
+                toggle_selection_mode,
+                update_selected_position,
+                (move_selection_box, break_blocks, place_blocks)
+                    .run_if(in_state(UiState::InGame))
+            ));
     }
 }
 
@@ -38,6 +40,7 @@ fn spawn_selection_box(
         MeshMaterial2d(materials.add(Color::WHITE.with_alpha(0.5))),
         Transform::from_scale(Vec3::splat(BLOCK_SIZE_PX + 4.)),
         BlockSelectionBox,
+        StateScoped(UiState::InGame)
     ));
 }
 

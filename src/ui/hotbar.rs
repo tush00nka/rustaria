@@ -4,7 +4,7 @@ use crate::player::{hotbar::Hotbar, Player};
 
 use super::{
     inventory::{
-        update_inventory_of, InventorySlot, InventorySlotImage, InventorySlotText
+        update_inventory_of, InventorySlot
     },
     mode_manager::UiState
 };
@@ -54,7 +54,6 @@ fn spawn_hotbar(
                 align_self: AlignSelf::Center,
                 ..default()
             },
-            InventorySlotImage(i),
         )).id();
         let slot_amount = commands.spawn((
             Text::new("0"),
@@ -67,7 +66,6 @@ fn spawn_hotbar(
                 justify: JustifyText::Left,
                 linebreak: LineBreak::NoWrap,
             },
-            InventorySlotText(0),
         )).id();
 
         commands.entity(slot_item).add_child(slot_amount);

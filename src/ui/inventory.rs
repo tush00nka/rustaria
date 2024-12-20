@@ -28,12 +28,6 @@ impl Plugin for InventoryPlugin {
 #[derive(Component)]
 pub struct InventorySlot(pub usize);
 
-#[derive(Component)]
-pub struct InventorySlotImage(pub usize);
-
-#[derive(Component)]
-pub struct InventorySlotText(pub usize);
-
 #[derive(Resource, Default)]
 pub struct CurrentDragItem {
     pub item: Option<Item>,
@@ -86,7 +80,6 @@ fn spawn_player_inventory(
                 align_self: AlignSelf::Center,
                 ..default()
             },
-            InventorySlotImage(i),
         )).id();
         let slot_amount = commands.spawn((
             Text::new("  "),
@@ -96,7 +89,6 @@ fn spawn_player_inventory(
                 ..default()
             },
             TextLayout::new_with_no_wrap(),
-            InventorySlotText(0),
         )).id();
 
         commands.entity(slot_item).add_child(slot_amount);
