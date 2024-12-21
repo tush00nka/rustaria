@@ -20,7 +20,7 @@ pub enum BlockLayer {
 
 pub const MAX_LIGHT_LEVEL: u8 = 15;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Block {
     pub id: u32,
     pub is_solid: bool,

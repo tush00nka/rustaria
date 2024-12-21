@@ -112,6 +112,7 @@ fn break_blocks(
     keyboard: Res<ButtonInput<KeyCode>>,
     selected: Res<SelectedBlock>,
     mut ev_break_block: EventWriter<SetBlock>,
+    world: Res<World>,
 ) {
     if mouse_button.pressed(MouseButton::Left) {
 
@@ -122,6 +123,9 @@ fn break_blocks(
         else {
             layer = BlockLayer::Foreground;
         }
+
+        let Some(block) = world.get_block(selected.position.x, selected.position.y, layer) else { return; };
+        if block.id == 0 { return; };
 
         ev_break_block.send(SetBlock {
             block: Block::AIR,

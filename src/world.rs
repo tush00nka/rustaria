@@ -10,7 +10,7 @@ use crate::{
     inventory::item::ItemDatabase,
     item_pickup::SpawnItemPickup,
     BLOCK_SIZE_PX,
-    CHUNK_SIZE
+    CHUNK_SIZE, WORLD_HEIGHT
 };
 
 pub struct WorldPlugin;
@@ -75,8 +75,8 @@ impl World {
 fn generate_world (
     mut ev_generate_chunk_data: EventWriter<GenerateChunkData>
 ) {
-    for y in (-8..1).rev() {
-        for x in (-8..8).rev() {
+    for y in (-4..WORLD_HEIGHT+1).rev() {
+        for x in (-4..4).rev() {
             ev_generate_chunk_data.send(GenerateChunkData {
                 position: (x, y)
             });
@@ -96,7 +96,8 @@ pub struct SetBlock{
 fn set_block_at_position(
     mut ev_break_block: EventReader<SetBlock>,
     mut world: ResMut<World>,
-    mut ev_draw_chunk: EventWriter<DrawChunk>,
+    // mut ev_draw_chunk: EventWriter<DrawChunk>,
+    mut ev_update_light: EventWriter<UpdateChunkLight>,
     mut ev_spawn_item_pickup: EventWriter<SpawnItemPickup>,
     item_database: Res<ItemDatabase>,
     block_database: Res<BlockDatabase>,
@@ -125,7 +126,7 @@ fn set_block_at_position(
                     return;
                 }
                 block_to_replace = chunk.background_data[block_x][block_y];
-                chunk.background_data[block_x][block_y] = ev.block
+                chunk.background_data[block_x][block_y] = ev.block;
             }
         }
 
@@ -136,6 +137,6 @@ fn set_block_at_position(
             });
         }
 
-        ev_draw_chunk.send(DrawChunk { chunk: *chunk });
+        ev_update_light.send(UpdateChunkLight { chunk: *chunk });
     }
 }
