@@ -11,7 +11,7 @@ use block::*;
 mod block_structure;
 use block_structure::*;
 
-use crate::{CHUNK_SIZE, SEED};
+use crate::{WORLD_WIDTH, WORLD_HEIGHT, SEED};
 use crate::BLOCK_SIZE_PX;
 pub struct ChunkPlugin;
 
@@ -30,25 +30,17 @@ impl Plugin for ChunkPlugin {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Chunk {
-    pub position: (i32, i32),
-    pub data: [[Block; CHUNK_SIZE]; CHUNK_SIZE],
-    pub background_data: [[Block; CHUNK_SIZE]; CHUNK_SIZE],
+    pub data: Vec<Vec<Block>>,
+    pub background_data: Vec<Vec<Block>>,
 }
 
 impl Chunk {
-    pub const PLACEHOLDER: Chunk = Self {
-        position: (i32::MAX, i32::MAX),
-        data: [[Block::AIR; CHUNK_SIZE]; CHUNK_SIZE],
-        background_data: [[Block::AIR; CHUNK_SIZE]; CHUNK_SIZE]
-    };
-
-    pub fn new(_x: i32, _y: i32) -> Self {
+    pub fn new() -> Self {
         Self {
-            position: (_x,_y),
-            data: [[Block::AIR; CHUNK_SIZE]; CHUNK_SIZE],
-            background_data: [[Block::AIR; CHUNK_SIZE]; CHUNK_SIZE]
+            data: vec![vec![Block::AIR; WORLD_HEIGHT]; WORLD_WIDTH],
+            background_data: vec![vec![Block::AIR; WORLD_HEIGHT]; WORLD_WIDTH]
         }
     }
 
@@ -72,8 +64,8 @@ impl Chunk {
         let mut not_solid_uvs: Vec<[f32; 2]> = vec![];
         let mut bg_uvs: Vec<[f32; 2]> = vec![];
 
-        for y in 0..CHUNK_SIZE {
-            for x in 0..CHUNK_SIZE {
+        for y in 0..WORLD_HEIGHT {
+            for x in 0..WORLD_WIDTH {
                 let uv_block_size = BLOCK_SIZE_PX/256.;
 
                 if self.data[x][y].is_solid {
@@ -198,9 +190,7 @@ impl Chunk {
 }
 
 #[derive(Event)]
-pub struct GenerateChunkData {
-    pub position: (i32, i32),
-}
+pub struct GenerateChunkData;
 
 fn generate_chunk_data(
     mut ev_generate: EventReader<GenerateChunkData>,
@@ -208,9 +198,8 @@ fn generate_chunk_data(
     mut world: ResMut<super::World>,
     block_database: Res<BlockDatabase>,
 ) {
-    for ev in ev_generate.read() {
-        let (_x, _y) = ev.position;
-        let mut chunk = Chunk::new(_x, _y);
+    for _ev in ev_generate.read() {
+        let mut chunk = Chunk::new();
 
         let mut hasher = std::hash::DefaultHasher::new();
         SEED.hash(&mut hasher);
@@ -220,17 +209,17 @@ fn generate_chunk_data(
 
         let mut block_structures: Vec<((usize, usize), BlockStructure)> = vec![];
 
-        for y in 0..CHUNK_SIZE {
-            for x in 0..CHUNK_SIZE {
+        for y in 0..WORLD_HEIGHT {
+            for x in 0..WORLD_WIDTH {
 
-                let xf = x as f64 + _x as f64 * CHUNK_SIZE as f64;
-                let yf = y as f64 + _y as f64 * CHUNK_SIZE as f64;
+                let xf = x as f64;
+                let yf = y as f64;
 
                 let spread = 0.05;
                 let oct1 = perlin.get([xf * spread]);
                 let oct2 = perlin.get([xf * spread * 0.25]);
                 let oct3 = perlin.get([xf * spread * 2.]);
-                let height = (oct1+oct2+oct3 + CHUNK_SIZE as f64 / 2.).floor();
+                let height = (oct1+oct2+oct3 + WORLD_HEIGHT as f64 / 2.).floor();
 
                 let oct1 = simplex.get([xf * spread, yf * spread]);
                 let oct2 = simplex.get([xf * spread * 0.25, yf * spread * 0.25]);
@@ -293,50 +282,50 @@ fn generate_chunk_data(
             }
         }
 
-        for ((x, y), structure) in block_structures.iter() {
-            for j in 0..structure.height() {
-                for i in 0..structure.width() {
-                    let block_id = structure.data[j][i];
-                    let bg_block_id = structure.bg_data[j][i];
+        // for ((x, y), structure) in block_structures.iter() {
+        //     for j in 0..structure.height() {
+        //         for i in 0..structure.width() {
+        //             let block_id = structure.data[j][i];
+        //             let bg_block_id = structure.bg_data[j][i];
     
-                    if block_id == 0 && !structure.fill_air { continue; };
-                    // todo: make it not to fill bg aswell
+        //             if block_id == 0 && !structure.fill_air { continue; };
+        //             // todo: make it not to fill bg aswell
 
-                    if x+i < CHUNK_SIZE {
-                        if y+j < CHUNK_SIZE {
-                            chunk.data[x+i][y+j] = block_database.get_by_id(block_id);
-                            chunk.background_data[x+i][y+j] = block_database.get_by_id(bg_block_id);
-                        }
-                        else {
-                            if let Some(neighbour) = world.get_chunk_mut(_x, _y+1) {
-                                neighbour.data[x+i][j] = block_database.get_by_id(block_id);
-                                chunk.background_data[x+i][j] = block_database.get_by_id(bg_block_id);
-                                ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
-                            }
-                        }
-                    }
-                    else {
-                        if y+j < CHUNK_SIZE {
-                            if let Some(neighbour) = world.get_chunk_mut(_x+1, _y) {
-                                neighbour.data[i][y+j] = block_database.get_by_id(block_id);
-                                chunk.background_data[i][y+j] = block_database.get_by_id(bg_block_id);
-                                ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
-                            }
-                        }
-                        else {
-                            if let Some(neighbour) = world.get_chunk_mut(_x+1, _y+1) {
-                                neighbour.data[i][j] = block_database.get_by_id(block_id);
-                                chunk.background_data[i][j] = block_database.get_by_id(bg_block_id);
-                                ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        //             if x+i < WORLD_WIDTH {
+        //                 if y+j < WORLD_HEIGHT {
+        //                     chunk.data[x+i][y+j] = block_database.get_by_id(block_id);
+        //                     chunk.background_data[x+i][y+j] = block_database.get_by_id(bg_block_id);
+        //                 }
+        //                 else {
+        //                     if let Some(neighbour) = world.get_chunk_mut(_x, _y+1) {
+        //                         neighbour.data[x+i][j] = block_database.get_by_id(block_id);
+        //                         chunk.background_data[x+i][j] = block_database.get_by_id(bg_block_id);
+        //                         ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
+        //                     }
+        //                 }
+        //             }
+        //             else {
+        //                 if y+j < WORLD_HEIGHT {
+        //                     if let Some(neighbour) = world.get_chunk_mut(_x+1, _y) {
+        //                         neighbour.data[i][y+j] = block_database.get_by_id(block_id);
+        //                         chunk.background_data[i][y+j] = block_database.get_by_id(bg_block_id);
+        //                         ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
+        //                     }
+        //                 }
+        //                 else {
+        //                     if let Some(neighbour) = world.get_chunk_mut(_x+1, _y+1) {
+        //                         neighbour.data[i][j] = block_database.get_by_id(block_id);
+        //                         chunk.background_data[i][j] = block_database.get_by_id(bg_block_id);
+        //                         ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
-        world.chunks.insert((_x, _y), chunk);
-        ev_update_light.send(UpdateChunkLight { chunk });
+        world.chunk = chunk;
+        ev_update_light.send(UpdateChunkLight { chunk: world.chunk.clone() });
     }
 }
 
@@ -351,21 +340,14 @@ fn update_light(
     mut ev_draw_chunk: EventWriter<DrawChunk>,
 ) {
     for ev in ev_update_light.read() {
-        let mut chunk = ev.chunk;
-        let (_x, _y) = chunk.position; 
+        let mut chunk = ev.chunk.clone();
 
         let mut block_light_queue = vec![];
         // let mut sun_light_queue = vec![];
 
-        let default_chunk = Chunk::PLACEHOLDER;
-        let top_chunk = world.get_chunk(_x, _y+1).unwrap_or(&default_chunk);
-        let left_chunk = world.get_chunk(_x-1, _y).unwrap_or(&default_chunk);
-        let right_chunk = world.get_chunk(_x+1, _y).unwrap_or(&default_chunk);
-        let bottom_chunk = world.get_chunk(_x, _y-1).unwrap_or(&default_chunk);
-
         // block light
-        for y in 0..CHUNK_SIZE {
-            for x in 0..CHUNK_SIZE {                
+        for y in 0..WORLD_HEIGHT {
+            for x in 0..WORLD_WIDTH {                
                 chunk.data[x][y].light = 0;
                 chunk.background_data[x][y].light = 0;
 
@@ -373,20 +355,6 @@ fn update_light(
                     chunk.data[x][y].light = chunk.data[x][y].light_emission;
                     block_light_queue.push(((x,y), chunk.data[x][y].light_emission));
                 }
-
-                if top_chunk.data[x][0].light > chunk.data[x][CHUNK_SIZE-1].light {
-                    block_light_queue.push(((x,CHUNK_SIZE-1), top_chunk.data[x][0].light - 1));
-                }
-                if bottom_chunk.data[x][CHUNK_SIZE-1].light > chunk.data[x][0].light {
-                    block_light_queue.push(((x,0), bottom_chunk.data[x][CHUNK_SIZE-1].light - 1));
-                }
-            }
-
-            if left_chunk.data[CHUNK_SIZE-1][y].light > chunk.data[0][y].light {
-                block_light_queue.push(((0,y), left_chunk.data[CHUNK_SIZE-1][y].light - 1));
-            }
-            if right_chunk.data[0][y].light > chunk.data[CHUNK_SIZE-1][y].light {
-                block_light_queue.push(((CHUNK_SIZE-1,y), right_chunk.data[0][y].light - 1));
             }
         }
 
@@ -425,7 +393,7 @@ fn update_light(
         while !block_light_queue.is_empty() {
             if let Some(((x, y), emission)) = block_light_queue.pop() {
                 if emission >= 1 {
-                    if x+1 < CHUNK_SIZE {
+                    if x+1 < WORLD_WIDTH {
                         if chunk.data[x+1][y].light < emission-1 {
                             chunk.data[x+1][y].light = emission-1;
                             chunk.background_data[x+1][y].light = emission-1;
@@ -433,7 +401,7 @@ fn update_light(
                         }
                     }
     
-                    if y+1 < CHUNK_SIZE {
+                    if y+1 < WORLD_HEIGHT {
                         if chunk.data[x][y+1].light < emission-1 {
                             chunk.data[x][y+1].light = emission-1;
                             chunk.background_data[x][y+1].light = emission-1;
@@ -460,11 +428,8 @@ fn update_light(
             }
         }
     
-        let chunk_to_edit= world.get_chunk_mut(_x, _y).unwrap();
-        chunk_to_edit.data = chunk.data;
-        chunk_to_edit.background_data = chunk.background_data;
-
-        ev_draw_chunk.send(DrawChunk { chunk });
+        world.chunk = chunk;
+        ev_draw_chunk.send(DrawChunk { chunk: world.chunk.clone() });
     }
 }
 
@@ -487,10 +452,7 @@ fn draw_chunk(
         let chunk_entity = commands.spawn((
             Mesh2d(meshes.add(mesh)),
             MeshMaterial2d(materials.add(asset_server.load("blocks.png"))),
-            Transform::from_translation(Vec3::new(
-                ev.chunk.position.0 as f32 * CHUNK_SIZE as f32 * BLOCK_SIZE_PX,
-                ev.chunk.position.1 as f32 * CHUNK_SIZE as f32 * BLOCK_SIZE_PX, 0.0
-            )),
+            Transform::from_translation(Vec3::splat(0.0)),
             collider,
             CollisionGroups::new(Group::GROUP_2, Group::GROUP_1 | Group::GROUP_3),
             Friction::coefficient(0.0),
@@ -509,10 +471,9 @@ fn draw_chunk(
         ))
         .id();
 
-        if world.chunk_entites.contains_key(&ev.chunk.position) {
-            commands.entity(*world.chunk_entites.get(&ev.chunk.position).unwrap()).despawn_recursive();
-            world.chunk_entites.remove(&ev.chunk.position);
+        if world.chunk_entity != Entity::PLACEHOLDER {
+            commands.entity(world.chunk_entity).despawn_recursive();
         }
-        world.chunk_entites.insert(ev.chunk.position, chunk_entity);
+        world.chunk_entity = chunk_entity;
     }
 }

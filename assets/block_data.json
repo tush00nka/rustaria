@@ -29,7 +29,7 @@
             "is_solid": true,
             "durability": 4,
             "drop_item": 3,
-            "light_emission": 0
+            "light_emission": 15
         },
 
         {
@@ -45,7 +45,7 @@
             "is_solid": false,
             "durability": 1,
             "drop_item": 5,
-            "light_emission": 15
+            "light_emission": 0
         },
 
         {

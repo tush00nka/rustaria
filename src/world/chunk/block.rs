@@ -20,7 +20,7 @@ pub enum BlockLayer {
 
 pub const MAX_LIGHT_LEVEL: u8 = 15;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct Block {
     pub id: u32,
     pub is_solid: bool,
@@ -39,10 +39,6 @@ impl Block {
         light_emission: 0,
         light: 0,
     };
-
-    pub fn set_light(&mut self, light: u8) {
-        self.light = light;
-    }
 }
 
 #[derive(Resource, Deserialize)]

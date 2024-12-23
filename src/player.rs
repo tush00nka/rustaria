@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::{inventory::Inventory, BLOCK_SIZE_PX, CHUNK_SIZE};
+use crate::{inventory::Inventory, BLOCK_SIZE_PX, WORLD_HEIGHT, WORLD_WIDTH};
 
 mod movement;
 use movement::PlayerMovementPlugin;
@@ -55,7 +55,7 @@ fn spawn_player(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut ma
         Mesh2d(meshes.add(Rectangle::default())),
         MeshMaterial2d(materials.add(Color::WHITE)),
         Transform {
-            translation: Vec3::new(0.0, BLOCK_SIZE_PX * CHUNK_SIZE as f32, 0.0),
+            translation: Vec3::new(BLOCK_SIZE_PX * WORLD_WIDTH as f32 / 2., BLOCK_SIZE_PX * WORLD_HEIGHT as f32, 0.0),
             scale: Vec3::new(BLOCK_SIZE_PX, BLOCK_SIZE_PX*2., 1.),
             ..default()
         },
