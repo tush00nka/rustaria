@@ -42,10 +42,10 @@
 
         {
             "id": 5,
-            "is_solid": true,
+            "is_solid": false,
             "durability": 1,
             "drop_item": 5,
-            "light_emission": 0
+            "light_emission": 15
         },
 
         {

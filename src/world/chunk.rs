@@ -1,4 +1,4 @@
-use std::{cmp::{self, max}, hash::{Hash, Hasher}};
+use std::hash::{Hash, Hasher};
 
 use bevy_rapier2d::prelude::*;
 use bevy::{asset::RenderAssetUsages, prelude::*, render::mesh::{Indices, PrimitiveTopology}};
@@ -11,7 +11,7 @@ use block::*;
 mod block_structure;
 use block_structure::*;
 
-use crate::{CHUNK_SIZE, SEED, WORLD_HEIGHT};
+use crate::{CHUNK_SIZE, SEED};
 use crate::BLOCK_SIZE_PX;
 pub struct ChunkPlugin;
 
@@ -22,11 +22,15 @@ impl Plugin for ChunkPlugin {
             .add_event::<GenerateChunkData>()
             .add_event::<DrawChunk>()
             .add_event::<UpdateChunkLight>();
-        app.add_systems(Update, (debug_reload_light, update_light, generate_chunk_data, draw_chunk.after(generate_chunk_data)));
+        app.add_systems(Update, (
+            generate_chunk_data,
+            update_light.after(generate_chunk_data),
+            draw_chunk.after(update_light),
+        ));
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Chunk {
     pub position: (i32, i32),
     pub data: [[Block; CHUNK_SIZE]; CHUNK_SIZE],
@@ -34,6 +38,12 @@ pub struct Chunk {
 }
 
 impl Chunk {
+    pub const PLACEHOLDER: Chunk = Self {
+        position: (i32::MAX, i32::MAX),
+        data: [[Block::AIR; CHUNK_SIZE]; CHUNK_SIZE],
+        background_data: [[Block::AIR; CHUNK_SIZE]; CHUNK_SIZE]
+    };
+
     pub fn new(_x: i32, _y: i32) -> Self {
         Self {
             position: (_x,_y),
@@ -143,7 +153,7 @@ impl Chunk {
                     ]);
 
                     let light = self.background_data[x][y].light as f32 / 15.;
-                    let color = [light/3., light/3., light/3., 1.0];
+                    let color = [light/10., light/10., light/10., 1.0];
                     bg_colors.extend([color; 4]);
 
                     let uv_offset_x = (self.background_data[x][y].id as f32 * BLOCK_SIZE_PX) / 256.;
@@ -194,7 +204,6 @@ pub struct GenerateChunkData {
 
 fn generate_chunk_data(
     mut ev_generate: EventReader<GenerateChunkData>,
-    mut ev_draw: EventWriter<DrawChunk>,
     mut ev_update_light: EventWriter<UpdateChunkLight>,
     mut world: ResMut<super::World>,
     block_database: Res<BlockDatabase>,
@@ -302,7 +311,7 @@ fn generate_chunk_data(
                             if let Some(neighbour) = world.get_chunk_mut(_x, _y+1) {
                                 neighbour.data[x+i][j] = block_database.get_by_id(block_id);
                                 chunk.background_data[x+i][j] = block_database.get_by_id(bg_block_id);
-                                ev_draw.send(DrawChunk { chunk: *neighbour });
+                                ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
                             }
                         }
                     }
@@ -311,14 +320,14 @@ fn generate_chunk_data(
                             if let Some(neighbour) = world.get_chunk_mut(_x+1, _y) {
                                 neighbour.data[i][y+j] = block_database.get_by_id(block_id);
                                 chunk.background_data[i][y+j] = block_database.get_by_id(bg_block_id);
-                                ev_draw.send(DrawChunk { chunk: *neighbour });
+                                ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
                             }
                         }
                         else {
                             if let Some(neighbour) = world.get_chunk_mut(_x+1, _y+1) {
                                 neighbour.data[i][j] = block_database.get_by_id(block_id);
                                 chunk.background_data[i][j] = block_database.get_by_id(bg_block_id);
-                                ev_draw.send(DrawChunk { chunk: *neighbour });
+                                ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
                             }
                         }
                     }
@@ -328,7 +337,6 @@ fn generate_chunk_data(
 
         world.chunks.insert((_x, _y), chunk);
         ev_update_light.send(UpdateChunkLight { chunk });
-        // ev_draw.send(DrawChunk { chunk });
     }
 }
 
@@ -337,127 +345,127 @@ pub struct UpdateChunkLight {
     pub chunk: Chunk,
 }
 
-fn debug_reload_light(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut ev_update_light: EventWriter<UpdateChunkLight>,
-    world: Res<super::World>,
-) {
-    if keyboard.just_pressed(KeyCode::KeyL) {
-        ev_update_light.send(UpdateChunkLight { chunk: *world.get_chunk(0, 0).unwrap() });
-        ev_update_light.send(UpdateChunkLight { chunk: *world.get_chunk(1, 0).unwrap() });
-        ev_update_light.send(UpdateChunkLight { chunk: *world.get_chunk(-1, 0).unwrap() });
-        ev_update_light.send(UpdateChunkLight { chunk: *world.get_chunk(0, -1).unwrap() });
-        ev_update_light.send(UpdateChunkLight { chunk: *world.get_chunk(1, -1).unwrap() });
-        ev_update_light.send(UpdateChunkLight { chunk: *world.get_chunk(-1, -1).unwrap() });
-    }
-}
-
 fn update_light(
-    mut ev_draw: EventWriter<DrawChunk>,
     mut world: ResMut<super::World>,
     mut ev_update_light: EventReader<UpdateChunkLight>,
+    mut ev_draw_chunk: EventWriter<DrawChunk>,
 ) {
     for ev in ev_update_light.read() {
-        let chunk = ev.chunk;
+        let mut chunk = ev.chunk;
         let (_x, _y) = chunk.position; 
 
         let mut block_light_queue = vec![];
-        let mut sun_light_queue = vec![];
+        // let mut sun_light_queue = vec![];
 
-        let top_chunk_data = if _y < WORLD_HEIGHT { 
-            world.get_chunk(_x, _y+1).unwrap().data
-        }
-        else {
-            [[Block::AIR; CHUNK_SIZE]; CHUNK_SIZE]
-        };
-
-        let chunk_to_edit = world.get_chunk_mut(_x, _y).unwrap();
+        let default_chunk = Chunk::PLACEHOLDER;
+        let top_chunk = world.get_chunk(_x, _y+1).unwrap_or(&default_chunk);
+        let left_chunk = world.get_chunk(_x-1, _y).unwrap_or(&default_chunk);
+        let right_chunk = world.get_chunk(_x+1, _y).unwrap_or(&default_chunk);
+        let bottom_chunk = world.get_chunk(_x, _y-1).unwrap_or(&default_chunk);
 
         // block light
         for y in 0..CHUNK_SIZE {
-            for x in 0..CHUNK_SIZE {
+            for x in 0..CHUNK_SIZE {                
+                chunk.data[x][y].light = 0;
+                chunk.background_data[x][y].light = 0;
+
                 if chunk.data[x][y].light_emission > 0 {
-                    chunk_to_edit.data[x][y].light = chunk.data[x][y].light_emission;
+                    chunk.data[x][y].light = chunk.data[x][y].light_emission;
                     block_light_queue.push(((x,y), chunk.data[x][y].light_emission));
                 }
-                else {
-                    chunk_to_edit.data[x][y].light = 0;
-                    chunk_to_edit.background_data[x][y].light = 0;
+
+                if top_chunk.data[x][0].light > chunk.data[x][CHUNK_SIZE-1].light {
+                    block_light_queue.push(((x,CHUNK_SIZE-1), top_chunk.data[x][0].light - 1));
+                }
+                if bottom_chunk.data[x][CHUNK_SIZE-1].light > chunk.data[x][0].light {
+                    block_light_queue.push(((x,0), bottom_chunk.data[x][CHUNK_SIZE-1].light - 1));
                 }
             }
+
+            if left_chunk.data[CHUNK_SIZE-1][y].light > chunk.data[0][y].light {
+                block_light_queue.push(((0,y), left_chunk.data[CHUNK_SIZE-1][y].light - 1));
+            }
+            if right_chunk.data[0][y].light > chunk.data[CHUNK_SIZE-1][y].light {
+                block_light_queue.push(((CHUNK_SIZE-1,y), right_chunk.data[0][y].light - 1));
+            }
         }
+
 
         // sun light
-        if _y == WORLD_HEIGHT {
-            for x in 0..CHUNK_SIZE {
-                chunk_to_edit.data[x][CHUNK_SIZE-1].light = 15;
-                sun_light_queue.push(((x,CHUNK_SIZE-1), 15));
-            }
-        }
-        else {
-            for x in 0..CHUNK_SIZE {
-                chunk_to_edit.data[x][CHUNK_SIZE-1].light = top_chunk_data[x][0].light;  
-                sun_light_queue.push(((x,CHUNK_SIZE-1), top_chunk_data[x][0].light));
-            }
-        }
+        // if _y == WORLD_HEIGHT {
+        //     for x in 0..CHUNK_SIZE {
+        //         chunk.data[x][CHUNK_SIZE-1].light = 15;
+        //         sun_light_queue.push(((x,CHUNK_SIZE-1), 15));
+        //     }
+        // }
+        // else {
+        //     for x in 0..CHUNK_SIZE {
+        //         chunk.data[x][CHUNK_SIZE-1].light = top_chunk.data[x][0].light;  
+        //         sun_light_queue.push(((x,CHUNK_SIZE-1), top_chunk.data[x][0].light));
+        //     }
+        // }
 
-        while !sun_light_queue.is_empty() {
-            if let Some(((x, y), em)) = sun_light_queue.pop() {
-                if em >= 1 {
-                    if y > 0 {
-                        let emission = if chunk_to_edit.data[x][y-1].is_solid {
-                            em - 1
-                        } else { em };
+        // while !sun_light_queue.is_empty() {
+        //     if let Some(((x, y), em)) = sun_light_queue.pop() {
+        //         if em >= 3 {
+        //             if y > 0 {
+        //                 let emission = if chunk.data[x][y-1].is_solid {
+        //                     em - 3
+        //                 } else { em };
 
-                        chunk_to_edit.data[x][y-1].light =
-                            max(emission, chunk_to_edit.data[x][y-1].light);
-                        chunk_to_edit.background_data[x][y-1].light =
-                            max(emission, chunk_to_edit.background_data[x][y-1].light);
-                        sun_light_queue.push(((x,y-1), emission));
-                    }
-                }
-            }
-        }
+        //                 if chunk.data[x][y-1].light < emission {
+        //                     chunk.data[x][y-1].light = emission;
+        //                     chunk.background_data[x][y-1].light = emission;
+        //                     sun_light_queue.push(((x,y-1), emission));
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
         while !block_light_queue.is_empty() {
             if let Some(((x, y), emission)) = block_light_queue.pop() {
                 if emission >= 1 {
                     if x+1 < CHUNK_SIZE {
-                        chunk_to_edit.data[x+1][y].light = 
-                            max(emission-1,  chunk_to_edit.data[x+1][y].light);
-                        chunk_to_edit.background_data[x+1][y].light = 
-                            max(emission-1, chunk_to_edit.background_data[x+1][y].light);
-                        block_light_queue.push(((x+1,y), emission-1));
+                        if chunk.data[x+1][y].light < emission-1 {
+                            chunk.data[x+1][y].light = emission-1;
+                            chunk.background_data[x+1][y].light = emission-1;
+                            block_light_queue.push(((x+1,y), emission-1));
+                        }
                     }
     
                     if y+1 < CHUNK_SIZE {
-                        chunk_to_edit.data[x][y+1].light =
-                            max(emission-1, chunk_to_edit.data[x][y+1].light);
-                        chunk_to_edit.background_data[x][y+1].light =
-                            max(emission-1, chunk_to_edit.background_data[x][y+1].light);
-                        block_light_queue.push(((x,y+1), emission-1));
+                        if chunk.data[x][y+1].light < emission-1 {
+                            chunk.data[x][y+1].light = emission-1;
+                            chunk.background_data[x][y+1].light = emission-1;
+                            block_light_queue.push(((x,y+1), emission-1));
+                        }
                     }
 
                     if x > 0 {
-                        chunk_to_edit.data[x-1][y].light = 
-                            max(emission-1, chunk_to_edit.data[x-1][y].light);
-                        chunk_to_edit.background_data[x-1][y].light = 
-                            max(emission-1, chunk_to_edit.background_data[x-1][y].light);
-                        block_light_queue.push(((x-1,y), emission-1));
+                        if chunk.data[x-1][y].light < emission-1 {
+                            chunk.data[x-1][y].light = emission-1;
+                            chunk.background_data[x-1][y].light = emission-1;
+                            block_light_queue.push(((x-1,y), emission-1));
+                        }
                     }
 
                     if y > 0 {
-                        chunk_to_edit.data[x][y-1].light =
-                            max(emission-1, chunk_to_edit.data[x][y-1].light);
-                        chunk_to_edit.background_data[x][y-1].light =
-                            max(emission-1, chunk_to_edit.background_data[x][y-1].light);
-                        block_light_queue.push(((x,y-1), emission-1));
+                        if chunk.data[x][y-1].light < emission-1 {
+                            chunk.data[x][y-1].light = emission-1;
+                            chunk.background_data[x][y-1].light = emission-1;
+                            block_light_queue.push(((x,y-1), emission-1));
+                        }
                     }
                 }
             }
         }
     
-        ev_draw.send(DrawChunk { chunk: *chunk_to_edit });
+        let chunk_to_edit= world.get_chunk_mut(_x, _y).unwrap();
+        chunk_to_edit.data = chunk.data;
+        chunk_to_edit.background_data = chunk.background_data;
+
+        ev_draw_chunk.send(DrawChunk { chunk });
     }
 }
 

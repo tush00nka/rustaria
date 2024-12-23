@@ -96,7 +96,6 @@ pub struct SetBlock{
 fn set_block_at_position(
     mut ev_break_block: EventReader<SetBlock>,
     mut world: ResMut<World>,
-    // mut ev_draw_chunk: EventWriter<DrawChunk>,
     mut ev_update_light: EventWriter<UpdateChunkLight>,
     mut ev_spawn_item_pickup: EventWriter<SpawnItemPickup>,
     item_database: Res<ItemDatabase>,
