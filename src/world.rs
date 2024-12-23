@@ -75,14 +75,19 @@ impl World {
 fn generate_world (
     mut ev_generate_chunk_data: EventWriter<GenerateChunkData>
 ) {
-    for y in (-4..WORLD_HEIGHT+1).rev() {
-        for x in (-4..4).rev() {
-            ev_generate_chunk_data.send(GenerateChunkData {
-                position: (x, y)
-            });
+    // for y in (-4..WORLD_HEIGHT+1).rev() {
+    //     for x in (-4..4).rev() {
+    //         ev_generate_chunk_data.send(GenerateChunkData {
+    //             position: (x, y)
+    //         });
 
-        }
-    }
+    //     }
+    // }
+
+    ev_generate_chunk_data.send(GenerateChunkData {
+        position: (0, 0)
+    });
+
 }
 
 #[derive(Event)]

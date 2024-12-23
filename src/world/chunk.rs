@@ -144,7 +144,7 @@ impl Chunk {
                         base_index, base_index + 2, base_index + 3
                     ]);
                 } 
-                else if self.background_data[x][y].id != 0 {
+                if self.background_data[x][y].id != 0 && !self.data[x][y].is_solid {
                     bg_vertices.extend([
                         [x as f32 * BLOCK_SIZE_PX + BLOCK_SIZE_PX, y as f32 * BLOCK_SIZE_PX + BLOCK_SIZE_PX, -1.0],
                         [x as f32 * BLOCK_SIZE_PX, y as f32 * BLOCK_SIZE_PX + BLOCK_SIZE_PX, -1.0],
@@ -390,7 +390,6 @@ fn update_light(
             }
         }
 
-
         // sun light
         // if _y == WORLD_HEIGHT {
         //     for x in 0..CHUNK_SIZE {
@@ -488,7 +487,7 @@ fn draw_chunk(
         let chunk_entity = commands.spawn((
             Mesh2d(meshes.add(mesh)),
             MeshMaterial2d(materials.add(asset_server.load("blocks.png"))),
-            Transform::default().with_translation(Vec3::new(
+            Transform::from_translation(Vec3::new(
                 ev.chunk.position.0 as f32 * CHUNK_SIZE as f32 * BLOCK_SIZE_PX,
                 ev.chunk.position.1 as f32 * CHUNK_SIZE as f32 * BLOCK_SIZE_PX, 0.0
             )),
@@ -504,6 +503,9 @@ fn draw_chunk(
         .with_child((
             Mesh2d(meshes.add(bg_mesh)),
             MeshMaterial2d(materials.add(asset_server.load("blocks.png"))),
+            Transform::from_translation(Vec3::new(
+                0.0, 0.0, -1.0
+            )),
         ))
         .id();
 
