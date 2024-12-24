@@ -525,15 +525,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy_dylib"
-version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2b0c60e568493ac23c001d22f47b99818efe1e992253e2ab3fdb69603b2aa1c"
-dependencies = [
- "bevy_internal",
-]
-
-[[package]]
 name = "bevy_ecs"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3680,7 +3671,6 @@ name = "rustaria"
 version = "0.1.0"
 dependencies = [
  "bevy",
- "bevy_dylib",
  "bevy_rapier2d",
  "glam",
  "noise",
