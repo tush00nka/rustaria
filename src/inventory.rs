@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-mod crafting;
+pub mod crafting;
 use crafting::CraftingPlugin;
 
 pub mod item;
