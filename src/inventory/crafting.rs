@@ -3,11 +3,18 @@ use std::{fs::File, io::Read};
 use bevy::prelude::*;
 use serde_json::{Map, Value};
 
+use crate::player::Player;
+
+use super::{item::ItemDatabase, Inventory};
+
 pub struct CraftingPlugin;
 
 impl Plugin for CraftingPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, init_database);
+        app.add_event::<CraftItem>();
+        app
+            .add_systems(Startup, init_database)
+            .add_systems(Update, (craft_item, debug));
     }
 }
 
@@ -63,4 +70,42 @@ fn init_database(
     }
 
     commands.insert_resource(CraftingRecipeDatabase { recipes });
+}
+
+#[derive(Event)]
+pub struct CraftItem(pub u32);
+
+fn debug(
+    mut ev_craft: EventWriter<CraftItem>,
+    keyboard: Res<ButtonInput<KeyCode>>
+) {
+    if keyboard.just_pressed(KeyCode::KeyT) {
+        ev_craft.send(CraftItem(7));
+    }
+}
+
+fn craft_item(
+    mut ev_craft: EventReader<CraftItem>,
+    recipe_database: Res<CraftingRecipeDatabase>,
+    item_database: Res<ItemDatabase>,
+    mut inventory: Single<&mut Inventory, With<Player>>,
+) {
+    for ev in ev_craft.read() {
+        let Some(recipe) = recipe_database.get_by_output_id(ev.0) else { return };
+
+        for i in 0..recipe.inputs.len() {
+            if !inventory.has_item(item_database.get_by_id(recipe.inputs[i]), recipe.inputs_amount[i]) {
+                return;
+            }
+        }
+
+        for i in 0..recipe.inputs.len() {
+            inventory.remove_item(item_database.get_by_id(recipe.inputs[i]), recipe.inputs_amount[i]);
+        }
+
+        // todo: rewrite this workaround so i can add amount of items by one call
+        for _ in 0..recipe.output_amount {
+            inventory.add_item(item_database.get_by_id(recipe.output));
+        }
+    }
 }

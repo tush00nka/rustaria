@@ -103,11 +103,10 @@ impl Inventory {
         false
     }
 
-    #[allow(unused)]
-    pub fn remove_item(&mut self, item: Item) {
+    pub fn remove_item(&mut self, item: Item, amount: u32) {
         for slot in self.items.iter_mut() {
             if slot.item == Some(item) {
-                slot.amount -= 1;
+                slot.amount -= amount;
                 if slot.amount <= 0 {
                     slot.clear();
                 }
