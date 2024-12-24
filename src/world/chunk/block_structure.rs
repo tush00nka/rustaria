@@ -42,6 +42,7 @@ impl BlockStructure {
         }
     }
 
+    #[allow(unused)]
     pub fn new_house() -> Self {
         let mut data = vec![
             vec![3,3,3,3,3,3],

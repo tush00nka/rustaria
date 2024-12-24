@@ -26,9 +26,7 @@ use item_pickup::ItemPickupPlugin;
 mod ui;
 use ui::UiPlugin;
 
-const CHUNK_SIZE: usize = 64;
-const WORLD_WIDTH: usize = 1024;
-const WORLD_HEIGHT: usize = 256;
+const CHUNK_SIZE: usize = 32;
 const BLOCK_SIZE_PX: f32 = 16.;
 
 const SEED: &'static str = "I WANNA KMS";

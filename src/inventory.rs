@@ -97,6 +97,7 @@ impl Inventory {
         false
     }
 
+    #[allow(unused)]
     pub fn remove_item(&mut self, item: Item) {
         for slot in self.items.iter_mut() {
             if slot.item == Some(item) {
