@@ -1,5 +1,8 @@
 use bevy::prelude::*;
 
+mod crafting;
+use crafting::CraftingPlugin;
+
 pub mod item;
 use item::{Item, ItemPlugin};
 
@@ -7,7 +10,10 @@ pub struct InventoryPlugin;
 
 impl Plugin for InventoryPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(ItemPlugin);
+        app.add_plugins((
+            ItemPlugin,
+            CraftingPlugin
+        ));
     }
 }
 

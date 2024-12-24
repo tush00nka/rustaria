@@ -7,7 +7,7 @@ pub struct ItemPlugin;
 
 impl Plugin for ItemPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, init_item_database);
+        app.add_systems(Startup, init_database);
     }
 }
 
@@ -65,7 +65,7 @@ impl ItemDatabase {
     }
 }
 
-fn init_item_database(
+fn init_database(
     mut commands: Commands,
 ) {
     let mut file = File::open("assets/item_data.json").unwrap();

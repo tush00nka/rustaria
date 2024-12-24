@@ -1,0 +1,17 @@
+{
+    "recipes": [
+        {
+            "inputs": [6],
+            "inputs_amount": [1],
+            "output": 7,
+            "output_amount": 1
+        },
+
+        {
+            "inputs": [1],
+            "inputs_amount": [1],
+            "output": 2,
+            "output_amount": 1
+        }
+    ]
+}
