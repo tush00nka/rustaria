@@ -10,7 +10,8 @@ use crate::{
     inventory::item::ItemDatabase,
     item_pickup::SpawnItemPickup,
     BLOCK_SIZE_PX,
-    CHUNK_SIZE
+    CHUNK_WIDTH,
+    CHUNK_HEIGHT
 };
 
 pub struct WorldPlugin;
@@ -52,13 +53,13 @@ impl World {
     }
 
     pub fn get_block(&self, x: f32, y: f32, layer: BlockLayer) -> Option<Block> {
-        let (chunk_x, chunk_y) = ((x / CHUNK_SIZE as f32 / BLOCK_SIZE_PX).floor() as i32,
-                                            (y / CHUNK_SIZE as f32 / BLOCK_SIZE_PX).floor() as i32);
+        let (chunk_x, chunk_y) = ((x / CHUNK_WIDTH as f32 / BLOCK_SIZE_PX).floor() as i32,
+                                            (y / CHUNK_HEIGHT as f32 / BLOCK_SIZE_PX).floor() as i32);
 
         let Some(chunk) = self.get_chunk(chunk_x, chunk_y) else { return None };
 
-        let (block_x, block_y) = ((x / BLOCK_SIZE_PX - (chunk_x as f32 * CHUNK_SIZE as f32)) as usize,
-                                                (y / BLOCK_SIZE_PX - (chunk_y as f32 * CHUNK_SIZE as f32)) as usize);
+        let (block_x, block_y) = ((x / BLOCK_SIZE_PX - (chunk_x as f32 * CHUNK_WIDTH as f32)) as usize,
+                                                (y / BLOCK_SIZE_PX - (chunk_y as f32 * CHUNK_HEIGHT as f32)) as usize);
 
         match layer {
             BlockLayer::Foreground => {
@@ -75,14 +76,11 @@ impl World {
 fn generate_world (
     mut ev_generate_chunk_data: EventWriter<GenerateChunkData>
 ) {
-    for y in (-4..1).rev() {
-        for x in (-4..4).rev() {
-            ev_generate_chunk_data.send(GenerateChunkData {
-                position: (x, y)
-            });
-        }
+    for x in (-4..4).rev() {
+        ev_generate_chunk_data.send(GenerateChunkData {
+            position: (x, 0)
+        });
     }
-
 }
 
 #[derive(Event)]
@@ -102,13 +100,13 @@ fn set_block_at_position(
     block_database: Res<BlockDatabase>,
 ) {
     for ev in ev_break_block.read() {
-        let (chunk_x, chunk_y) = ((ev.position.x / CHUNK_SIZE as f32 / BLOCK_SIZE_PX).floor() as i32,
-                                            (ev.position.y / CHUNK_SIZE as f32 / BLOCK_SIZE_PX).floor() as i32);
+        let (chunk_x, chunk_y) = ((ev.position.x / CHUNK_WIDTH as f32 / BLOCK_SIZE_PX).floor() as i32,
+                                            (ev.position.y / CHUNK_HEIGHT as f32 / BLOCK_SIZE_PX).floor() as i32);
 
         let Some(chunk) = world.get_chunk_mut(chunk_x, chunk_y) else { return; };
 
-        let (block_x, block_y) = ((ev.position.x / BLOCK_SIZE_PX - (chunk_x as f32 * CHUNK_SIZE as f32)) as usize,
-                                                (ev.position.y / BLOCK_SIZE_PX - (chunk_y as f32 * CHUNK_SIZE as f32)) as usize);
+        let (block_x, block_y) = ((ev.position.x / BLOCK_SIZE_PX - (chunk_x as f32 * CHUNK_WIDTH as f32)) as usize,
+                                                (ev.position.y / BLOCK_SIZE_PX - (chunk_y as f32 * CHUNK_HEIGHT as f32)) as usize);
 
         let block_to_replace;
 
