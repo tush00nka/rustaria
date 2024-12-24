@@ -1,4 +1,4 @@
-use std::hash::{Hash, Hasher};
+use std::{collections::VecDeque, hash::{Hash, Hasher}};
 
 use bevy_rapier2d::prelude::*;
 use bevy::{asset::RenderAssetUsages, prelude::*, render::mesh::{Indices, PrimitiveTopology}};
@@ -18,13 +18,15 @@ pub struct ChunkPlugin;
 impl Plugin for ChunkPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(BlockPlugin);
+        app.insert_resource(LightUpdateQueue(VecDeque::new()));
         app
             .add_event::<GenerateChunkData>()
             .add_event::<DrawChunk>()
             .add_event::<UpdateChunkLight>();
         app.add_systems(Update, (
             generate_chunk_data,
-            update_light.after(generate_chunk_data),
+            push_light_updates.after(generate_chunk_data),
+            update_light.after(push_light_updates),
             draw_chunk.after(update_light),
         ));
     }
@@ -311,7 +313,7 @@ fn generate_chunk_data(
                             if let Some(neighbour) = world.get_chunk_mut(_x, _y+1) {
                                 neighbour.data[x+i][j] = block_database.get_by_id(block_id);
                                 chunk.background_data[x+i][j] = block_database.get_by_id(bg_block_id);
-                                ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
+                                // ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
                             }
                         }
                     }
@@ -320,14 +322,14 @@ fn generate_chunk_data(
                             if let Some(neighbour) = world.get_chunk_mut(_x+1, _y) {
                                 neighbour.data[i][y+j] = block_database.get_by_id(block_id);
                                 chunk.background_data[i][y+j] = block_database.get_by_id(bg_block_id);
-                                ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
+                                // ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
                             }
                         }
                         else {
                             if let Some(neighbour) = world.get_chunk_mut(_x+1, _y+1) {
                                 neighbour.data[i][j] = block_database.get_by_id(block_id);
                                 chunk.background_data[i][j] = block_database.get_by_id(bg_block_id);
-                                ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
+                                // ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
                             }
                         }
                     }
@@ -336,28 +338,72 @@ fn generate_chunk_data(
         }
 
         world.chunks.insert((_x, _y), chunk);
-        ev_update_light.send(UpdateChunkLight { chunk });
+        ev_update_light.send(UpdateChunkLight { position: (_x, _y) });
     }
 }
 
 #[derive(Event)]
 pub struct UpdateChunkLight {
-    pub chunk: Chunk,
+    pub position: (i32, i32)
+}
+
+#[derive(Resource)]
+pub struct LightUpdateQueue(pub VecDeque<(i32, i32)>);
+
+fn push_light_updates(
+    mut ev_update_light: EventReader<UpdateChunkLight>,
+    mut queue: ResMut<LightUpdateQueue>,
+    world: Res<super::World>,
+) {
+    for ev in ev_update_light.read() {
+        let (x, y) = ev.position;
+
+        // middle
+        queue.0.push_back((x,y));
+
+        // sides
+        if world.get_chunk(x+1, y).is_some() {
+            queue.0.push_back((x+1,y));
+        }
+        if world.get_chunk(x-1, y).is_some() {
+            queue.0.push_back((x-1,y));
+        }  
+        if world.get_chunk(x, y+1).is_some() {
+            queue.0.push_back((x,y+1));
+        } 
+        if world.get_chunk(x, y-1).is_some() {
+            queue.0.push_back((x,y-1));
+        } 
+
+        // corners
+        if world.get_chunk(x+1, y+1).is_some() {
+            queue.0.push_back((x+1,y+1));
+        }
+        if world.get_chunk(x-1, y-1).is_some() {
+            queue.0.push_back((x-1,y-1));
+        }  
+        if world.get_chunk(x-1, y+1).is_some() {
+            queue.0.push_back((x-1,y+1));
+        } 
+        if world.get_chunk(x+1, y-1).is_some() {
+            queue.0.push_back((x+1,y-1));
+        } 
+    }
 }
 
 fn update_light(
     mut world: ResMut<super::World>,
-    mut ev_update_light: EventReader<UpdateChunkLight>,
     mut ev_draw_chunk: EventWriter<DrawChunk>,
+    mut queue: ResMut<LightUpdateQueue>,
 ) {
-    for ev in ev_update_light.read() {
-        let mut chunk = ev.chunk;
-        let (_x, _y) = chunk.position; 
+    if let Some(position) = queue.0.pop_front() {
+        let (_x, _y) = position; 
 
         let mut block_light_queue = vec![];
         // let mut sun_light_queue = vec![];
 
         let default_chunk = Chunk::PLACEHOLDER;
+        let mut chunk = world.get_chunk(_x, _y).unwrap_or(&default_chunk).clone();
         let top_chunk = world.get_chunk(_x, _y+1).unwrap_or(&default_chunk);
         let left_chunk = world.get_chunk(_x-1, _y).unwrap_or(&default_chunk);
         let right_chunk = world.get_chunk(_x+1, _y).unwrap_or(&default_chunk);

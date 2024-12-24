@@ -10,7 +10,7 @@ use crate::{
     inventory::item::ItemDatabase,
     item_pickup::SpawnItemPickup,
     BLOCK_SIZE_PX,
-    CHUNK_SIZE, WORLD_HEIGHT
+    CHUNK_SIZE
 };
 
 pub struct WorldPlugin;
@@ -75,18 +75,13 @@ impl World {
 fn generate_world (
     mut ev_generate_chunk_data: EventWriter<GenerateChunkData>
 ) {
-    // for y in (-4..WORLD_HEIGHT+1).rev() {
-    //     for x in (-4..4).rev() {
-    //         ev_generate_chunk_data.send(GenerateChunkData {
-    //             position: (x, y)
-    //         });
-
-    //     }
-    // }
-
-    ev_generate_chunk_data.send(GenerateChunkData {
-        position: (0, 0)
-    });
+    for y in (-4..1).rev() {
+        for x in (-4..4).rev() {
+            ev_generate_chunk_data.send(GenerateChunkData {
+                position: (x, y)
+            });
+        }
+    }
 
 }
 
@@ -141,6 +136,6 @@ fn set_block_at_position(
             });
         }
 
-        ev_update_light.send(UpdateChunkLight { chunk: *chunk });
+        ev_update_light.send(UpdateChunkLight { position: (chunk_x, chunk_y) });
     }
 }
