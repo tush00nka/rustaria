@@ -54,6 +54,14 @@
             "durability": 1,
             "drop_item": 6,
             "light_emission": 0
+        },
+
+        {
+            "id": 7,
+            "is_solid": false,
+            "durability": 1,
+            "drop_item": 7,
+            "light_emission": 15
         }
     ]
 }

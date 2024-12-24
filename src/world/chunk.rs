@@ -283,7 +283,7 @@ fn generate_chunk_data(
                     let mut rng = rand::thread_rng();
 
                     if x & 2 == 0 {
-                        chunk.data[x][y+1] = block_database.get_by_id(6); // thread
+                        chunk.data[x][y+1] = block_database.get_by_id(7); // thread
                     }
 
                     // trees
@@ -313,7 +313,7 @@ fn generate_chunk_data(
                             if let Some(neighbour) = world.get_chunk_mut(_x, _y+1) {
                                 neighbour.data[x+i][j] = block_database.get_by_id(block_id);
                                 chunk.background_data[x+i][j] = block_database.get_by_id(bg_block_id);
-                                // ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
+                                ev_update_light.send(UpdateChunkLight { position: (_x, _y+1) });
                             }
                         }
                     }
@@ -322,14 +322,16 @@ fn generate_chunk_data(
                             if let Some(neighbour) = world.get_chunk_mut(_x+1, _y) {
                                 neighbour.data[i][y+j] = block_database.get_by_id(block_id);
                                 chunk.background_data[i][y+j] = block_database.get_by_id(bg_block_id);
-                                // ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
+                                ev_update_light.send(UpdateChunkLight { position: (_x+1, _y) });
+
                             }
                         }
                         else {
                             if let Some(neighbour) = world.get_chunk_mut(_x+1, _y+1) {
                                 neighbour.data[i][j] = block_database.get_by_id(block_id);
                                 chunk.background_data[i][j] = block_database.get_by_id(bg_block_id);
-                                // ev_update_light.send(UpdateChunkLight { chunk: *neighbour });
+                                ev_update_light.send(UpdateChunkLight { position: (_x+1, _y+1) });
+
                             }
                         }
                     }
@@ -400,7 +402,7 @@ fn update_light(
         let (_x, _y) = position; 
 
         let mut block_light_queue = vec![];
-        let mut sun_light_queue = vec![];
+        // let mut sun_light_queue = vec![];
 
         let default_chunk = Chunk::PLACEHOLDER;
         let mut chunk = world.get_chunk(_x, _y).unwrap_or(&default_chunk).clone();
@@ -408,6 +410,54 @@ fn update_light(
         let left_chunk = world.get_chunk(_x-1, _y).unwrap_or(&default_chunk);
         let right_chunk = world.get_chunk(_x+1, _y).unwrap_or(&default_chunk);
         let bottom_chunk = world.get_chunk(_x, _y-1).unwrap_or(&default_chunk);
+
+        // // sun light
+        // if _y == 0 { // means we coundn't get data from upper chunk, so this chunk is topmost
+        //     for x in 0..CHUNK_SIZE {
+        //         chunk.data[x][CHUNK_SIZE-1].light = 15;
+        //         sun_light_queue.push(((x,CHUNK_SIZE-1), 15));
+        //     }
+        // }
+        // else {
+        //     for x in 0..CHUNK_SIZE {
+        //         chunk.data[x][CHUNK_SIZE-1].light = top_chunk.data[x][0].light;  
+        //         sun_light_queue.push(((x,CHUNK_SIZE-1), top_chunk.data[x][0].light));
+        //     }
+        // }
+
+        // while !sun_light_queue.is_empty() {
+        //     if let Some(((x, y), emission)) = sun_light_queue.pop() {
+        //         if emission >= 3 {
+        //             if y > 0 {
+        //                 let emission = if chunk.data[x][y-1].is_solid {
+        //                     emission - 3
+        //                 } else { emission };
+
+        //                 if chunk.data[x][y-1].light < emission {
+        //                     chunk.data[x][y-1].light = emission;
+        //                     chunk.background_data[x][y-1].light = emission;
+        //                     sun_light_queue.push(((x,y-1), emission));
+        //                 }
+        //             }
+
+        //             if x+1 < CHUNK_SIZE {
+        //                 if chunk.data[x+1][y].light < emission - 3 {
+        //                     chunk.data[x+1][y].light = emission - 3;
+        //                     chunk.background_data[x+1][y].light = emission - 3;
+        //                     sun_light_queue.push(((x+1,y), emission - 3));
+        //                 }
+        //             }
+
+        //             if x > 0 {
+        //                 if chunk.data[x-1][y].light < emission - 3 {
+        //                     chunk.data[x-1][y].light = emission - 3;
+        //                     chunk.background_data[x-1][y].light = emission - 3;
+        //                     sun_light_queue.push(((x-1,y), emission - 3));
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
         // block light
         for y in 0..CHUNK_SIZE {
@@ -417,6 +467,7 @@ fn update_light(
 
                 if chunk.data[x][y].light_emission > 0 {
                     chunk.data[x][y].light = chunk.data[x][y].light_emission;
+                    chunk.background_data[x][y].light = chunk.data[x][y].light_emission;
                     block_light_queue.push(((x,y), chunk.data[x][y].light_emission));
                 }
 
@@ -433,54 +484,6 @@ fn update_light(
             }
             if right_chunk.data[0][y].light > chunk.data[CHUNK_SIZE-1][y].light {
                 block_light_queue.push(((CHUNK_SIZE-1,y), right_chunk.data[0][y].light - 1));
-            }
-        }
-
-        // sun light
-        if _y == 0 { // means we coundn't get data from upper chunk, so this chunk is topmost
-            for x in 0..CHUNK_SIZE {
-                chunk.data[x][CHUNK_SIZE-1].light = 15;
-                sun_light_queue.push(((x,CHUNK_SIZE-1), 15));
-            }
-        }
-        else {
-            for x in 0..CHUNK_SIZE {
-                chunk.data[x][CHUNK_SIZE-1].light = top_chunk.data[x][0].light;  
-                sun_light_queue.push(((x,CHUNK_SIZE-1), top_chunk.data[x][0].light));
-            }
-        }
-
-        while !sun_light_queue.is_empty() {
-            if let Some(((x, y), emission)) = sun_light_queue.pop() {
-                if emission >= 3 {
-                    if y > 0 {
-                        let emission = if chunk.data[x][y-1].is_solid {
-                            emission - 3
-                        } else { emission };
-
-                        if chunk.data[x][y-1].light < emission {
-                            chunk.data[x][y-1].light = emission;
-                            chunk.background_data[x][y-1].light = emission;
-                            sun_light_queue.push(((x,y-1), emission));
-                        }
-                    }
-
-                    if x+1 < CHUNK_SIZE {
-                        if chunk.data[x+1][y].light < emission - 3 {
-                            chunk.data[x+1][y].light = emission - 3;
-                            chunk.background_data[x+1][y].light = emission - 3;
-                            sun_light_queue.push(((x+1,y), emission - 3));
-                        }
-                    }
-
-                    if x > 0 {
-                        if chunk.data[x-1][y].light < emission - 3 {
-                            chunk.data[x-1][y].light = emission - 3;
-                            chunk.background_data[x-1][y].light = emission - 3;
-                            sun_light_queue.push(((x-1,y), emission - 3));
-                        }
-                    }
-                }
             }
         }
 

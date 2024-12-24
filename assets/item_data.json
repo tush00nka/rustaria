@@ -48,6 +48,13 @@
             "item_type": "Miscellaneous",
             "texture": "textures/items/thread.png",
             "max_stack": 99
+        },
+
+        {
+            "id": 7,
+            "item_type": {"Block": {"id": 7 }},
+            "texture": "textures/items/torch.png",
+            "max_stack": 99
         }
     ]
 }
