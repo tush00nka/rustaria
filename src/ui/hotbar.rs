@@ -52,6 +52,7 @@ fn spawn_hotbar(
                 width: Val::Percent(80.),
                 height: Val::Percent(80.),
                 align_self: AlignSelf::Center,
+                position_type: PositionType::Absolute,
                 ..default()
             },
         )).id();
@@ -68,8 +69,7 @@ fn spawn_hotbar(
             },
         )).id();
 
-        commands.entity(slot_item).add_child(slot_amount);
-        commands.entity(slot).add_child(slot_item);
+        commands.entity(slot).add_children(&[slot_item, slot_amount]);
         item_slots.push(slot);
     }
 

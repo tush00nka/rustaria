@@ -78,6 +78,7 @@ fn spawn_player_inventory(
                 width: Val::Percent(80.),
                 height: Val::Percent(80.),
                 align_self: AlignSelf::Center,
+                position_type: PositionType::Absolute,
                 ..default()
             },
         )).id();
@@ -91,8 +92,7 @@ fn spawn_player_inventory(
             TextLayout::new_with_no_wrap(),
         )).id();
 
-        commands.entity(slot_item).add_child(slot_amount);
-        commands.entity(slot).add_child(slot_item);
+        commands.entity(slot).add_children(&[slot_item, slot_amount]);
         item_slots.push(slot);
     }
 
@@ -104,16 +104,16 @@ fn spawn_player_inventory(
 pub fn update_inventory_of<S: Component>(
     inventory: Single<&Inventory, With<S>>, // todo: add some <Changed> implementation
     mut q_slot: Query<(&Children, &InventorySlot)>,
-    mut q_slot_images: Query<(&Children, &mut ImageNode)>,
+    mut q_slot_images: Query<&mut ImageNode>,
     mut q_slot_texts: Query<&mut Text>,
     item_database: Res<ItemDatabase>,
     asset_server: Res<AssetServer>,
 ) {
     for (children, slot_id) in q_slot.iter_mut() {
         let image_entity = *children.get(0).unwrap();
-        let (image_children, mut slot_image) = q_slot_images.get_mut(image_entity).unwrap();
+        let mut slot_image = q_slot_images.get_mut(image_entity).unwrap();
 
-        let text_entity = *image_children.get(0).unwrap();
+        let text_entity = *children.get(1).unwrap();
         let mut slot_text= q_slot_texts.get_mut(text_entity).unwrap();
 
         let id = slot_id.0;
