@@ -14,7 +14,7 @@ impl Plugin for CraftingPlugin {
         app.add_event::<CraftItem>();
         app
             .add_systems(Startup, init_database)
-            .add_systems(Update, (craft_item, debug));
+            .add_systems(Update, craft_item);
     }
 }
 
@@ -74,15 +74,6 @@ fn init_database(
 
 #[derive(Event)]
 pub struct CraftItem(pub u32);
-
-fn debug(
-    mut ev_craft: EventWriter<CraftItem>,
-    keyboard: Res<ButtonInput<KeyCode>>
-) {
-    if keyboard.just_pressed(KeyCode::KeyT) {
-        ev_craft.send(CraftItem(7));
-    }
-}
 
 fn craft_item(
     mut ev_craft: EventReader<CraftItem>,
