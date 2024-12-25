@@ -19,7 +19,8 @@ impl Plugin for InventoryPlugin {
             .add_systems(OnEnter(UiState::Management), spawn_player_inventory)
             .add_systems(Update, (
                 update_inventory_of::<Player>,
-                move_items_of::<Player>
+                move_items_of::<Player>,
+                stick_to_mouse
             ).run_if(in_state(UiState::Management)))
             .add_systems(OnExit(UiState::Management), return_taken_item::<Player>);
     }
@@ -27,6 +28,9 @@ impl Plugin for InventoryPlugin {
 
 #[derive(Component)]
 pub struct InventorySlot(pub usize);
+
+#[derive(Component)]
+struct StickToMouse;
 
 #[derive(Resource, Default)]
 pub struct CurrentDragItem {
@@ -95,6 +99,28 @@ fn spawn_player_inventory(
         commands.entity(slot).add_children(&[slot_item, slot_amount]);
         item_slots.push(slot);
     }
+
+    commands.spawn((
+        ImageNode::solid_color(Color::WHITE),
+        Node {
+            width: Val::Px(16.),
+            height: Val::Px(16.),
+            position_type: PositionType::Absolute,
+            ..default()
+        },
+        GlobalZIndex(15),
+        StickToMouse,
+        StateScoped(UiState::Management)
+    ))
+    .with_child((
+        Text::new(" "),
+        TextColor::WHITE,
+        TextFont {
+            font_size: 12.,
+            ..default()
+        },
+        TextLayout::new_with_no_wrap()
+    ));
 
     commands.entity(canvas)
     .add_children(&item_slots)
@@ -189,5 +215,35 @@ fn return_taken_item<S: Component>(
         inventory.items[current_drag_item.slot_id].item = current_drag_item.item;
         inventory.items[current_drag_item.slot_id].amount = current_drag_item.amount;
         current_drag_item.clear();
+    }
+}
+
+fn stick_to_mouse(
+    curent_drag_item: Res<CurrentDragItem>,
+    item_database: Res<ItemDatabase>,
+    asset_server: Res<AssetServer>,
+    mut stick_to_mouse: Query<(&Children, &mut Node, &mut ImageNode), With<StickToMouse>>, 
+    mut texts: Query<&mut Text>,
+    window: Single<&Window>,
+) {
+    let Ok((children, mut node, mut image)) = stick_to_mouse.get_single_mut() else { return };
+
+    if let Some(position) = window.cursor_position() {
+        node.left = Val::Px(position.x);
+        node.top = Val::Px(position.y);
+    }
+
+    let Ok(mut text)= texts.get_mut(*children.get(0).unwrap()) else { return };
+
+    if let Some(item) = curent_drag_item.item {
+        image.color = Color::WHITE.with_alpha(1.0);
+        image.image = asset_server.load(item_database.get_texture_by_id(item.id));
+        if curent_drag_item.amount > 1 {
+            text.0 = curent_drag_item.amount.to_string();
+        }
+    }
+    else{
+        image.color = Color::WHITE.with_alpha(0.0);
+        text.0 = "".to_string();
     }
 }
