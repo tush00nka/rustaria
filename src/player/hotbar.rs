@@ -41,7 +41,8 @@ impl Hotbar {
 
 fn select_slot(
     mut hotbar: ResMut<Hotbar>,
-    mut ev_mouse_wheel: EventReader<MouseWheel>, 
+    mut ev_mouse_wheel: EventReader<MouseWheel>,
+    keyboard: Res<ButtonInput<KeyCode>>, 
 ) {
     use bevy::input::mouse::MouseScrollUnit;
     for ev in ev_mouse_wheel.read() {
@@ -54,6 +55,22 @@ fn select_slot(
                     hotbar.slot_down();
                 }
             },
+            _ => {}
+        }
+    }
+
+
+    for key in keyboard.get_just_pressed() {
+        match *key {
+            KeyCode::Digit1 => { hotbar.selected_slot = 0 },
+            KeyCode::Digit2 => { hotbar.selected_slot = 1 },
+            KeyCode::Digit3 => { hotbar.selected_slot = 2 },
+            KeyCode::Digit4 => { hotbar.selected_slot = 3 },
+            KeyCode::Digit5 => { hotbar.selected_slot = 4 },
+            KeyCode::Digit6 => { hotbar.selected_slot = 5 },
+            KeyCode::Digit7 => { hotbar.selected_slot = 6 },
+            KeyCode::Digit8 => { hotbar.selected_slot = 7 },
+            KeyCode::Digit9 => { hotbar.selected_slot = 8 },
             _ => {}
         }
     }
